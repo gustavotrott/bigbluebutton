@@ -36,8 +36,8 @@ const getBreakoutRoomUrl = (breakoutId) => {
   return breakoutUrlData;
 };
 
-const endAllBreakouts = () => {
-  makeCall('endAllBreakouts');
+const endAllBreakouts = (timeToEnd) => {
+  makeCall('endAllBreakouts', timeToEnd);
 };
 
 const requestJoinURL = (breakoutId) => {

@@ -4,7 +4,7 @@ import RedisPubSub from '/imports/startup/server/redis';
 import { extractCredentials } from '/imports/api/common/server/helpers';
 import Logger from '/imports/startup/server/logger';
 
-export default function endAllBreakouts() {
+export default function endAllBreakouts(delayTimeInSeconds = 0) {
   const REDIS_CONFIG = Meteor.settings.private.redis;
   const CHANNEL = REDIS_CONFIG.channels.toAkkaApps;
   const EVENT_NAME = 'EndAllBreakoutRoomsMsg';
@@ -17,7 +17,7 @@ export default function endAllBreakouts() {
 
     const payload = {
       meetingId,
-      delayTimeInSeconds: 0,
+      delayTimeInSeconds,
     };
 
     RedisPubSub.publishUserMessage(CHANNEL, EVENT_NAME, meetingId, requesterUserId, payload);
