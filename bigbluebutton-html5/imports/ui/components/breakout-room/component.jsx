@@ -12,6 +12,7 @@ import { PANELS, ACTIONS } from '../layout/enums';
 import { screenshareHasEnded } from '/imports/ui/components/screenshare/service';
 import AudioManager from '/imports/ui/services/audio-manager';
 import Settings from '/imports/ui/services/settings';
+import FinishBreakcoutContainer from './select-time-end-all-breakouts/container';
 
 const intlMessages = defineMessages({
   breakoutTitle: {
@@ -500,13 +501,11 @@ class BreakoutRoom extends PureComponent {
         </Styled.Duration>
       </Styled.DurationContainer>
     );
-  }
+  }  
 
   render() {
     const {
-      isMeteorConnected,
       intl,
-      endAllBreakouts,
       amIModerator,
     } = this.props;
     return (
@@ -524,17 +523,11 @@ class BreakoutRoom extends PureComponent {
         {
           amIModerator
             ? (
-              <Styled.EndButton
-                color="primary"
-                disabled={!isMeteorConnected}
-                size="lg"
-                label={intl.formatMessage(intlMessages.endAllBreakouts)}
-                data-test="endBreakoutRoomsButton"
-                onClick={() => {
-                  this.closePanel();
-                  endAllBreakouts();
-                }}
-              />
+              <>
+                <Styled.SelectTimeDellayWrap>                  
+                  <FinishBreakcoutContainer closePanel={this.closePanel}/>                  
+                </Styled.SelectTimeDellayWrap>
+              </>
             ) : null
         }
       </Styled.Panel>

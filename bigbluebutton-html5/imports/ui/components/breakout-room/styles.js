@@ -230,7 +230,15 @@ const HeaderButton = styled(Button)`
     }
   }`;
 
+const SelectTimeDellayWrap = styled.div`
+
+  width: 100%;
+  margin-bottom: 5px;
+
+`
+
 export default {
+  SelectTimeDellayWrap,
   BreakoutActions,
   AlreadyConnected,
   JoinButton,
