@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout ${{ github.event.pull_request.base.ref }}
-        uses: .github/workflows/automated-tests-checkout-step.yml
+        uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
       - name: Handle cache
         id: cache-action
         uses: actions/cache@v3
