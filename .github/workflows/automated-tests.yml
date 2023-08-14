@@ -23,71 +23,57 @@ jobs:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
       build-name: bbb-apps-akka
-      cache-file1-path: akka-bbb-apps
-      cache-file2-path: bbb-common-message
+      cache-files-list: akka-bbb-apps bbb-common-message
   build-bbb-config:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
       build-name: bbb-config
-      cache-file1-path: bbb-export-annotations
-      cache-file2-path: bigbluebutton-config/bigbluebutton-release
+      cache-files-list: bigbluebutton-config
   build-bbb-export-annotations:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
-      build-name: bbb-apps-akka
-      cache-file1-path: akka-bbb-apps
-      cache-file2-path: bbb-common-message
+      build-name: bbb-export-annotations
+      cache-files-list: bbb-export-annotations
   build-bbb-learning-dashboard:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
       build-name: bbb-learning-dashboard
-      cache-file1-path: bbb-learning-dashboard
-      cache-file2-path: bigbluebutton-config/bigbluebutton-release
+      cache-files-list: bbb-learning-dashboard
   build-bbb-playback-record:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
       build-name: bbb-apps-akka
       build-list: bbb-playback bbb-playback-notes bbb-playback-podcast bbb-playback-presentation bbb-playback-screenshare bbb-playback-video bbb-record-core
-      cache-file1-path: bigbluebutton-config/bigbluebutton-release
-      cache-file2-path: bigbluebutton-config/bigbluebutton-release
+      cache-files-list: bigbluebutton-config/bigbluebutton-release
   build-bbb-etherpad:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
       build-name: bbb-etherpad
-      cache-file1-path: bbb-etherpad.placeholder.sh
-      cache-file2-path: build/packages-template/bbb-etherpad
-      # run: |
-      #   echo "CACHE_URL1_KEY=$(curl -s https://api.github.com/repos/mconf/ep_pad_ttl/commits | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
-      #   echo "CACHE_URL2_KEY=$(curl -s https://api.github.com/repos/alangecker/bbb-etherpad-plugin/commits | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
-      #   echo "CACHE_URL3_KEY=$(curl -s https://api.github.com/repos/mconf/ep_redis_publisher/commits | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
-      #   echo "CACHE_URL4_KEY=$(curl -s https://api.github.com/repos/alangecker/bbb-etherpad-skin/commits | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
+      cache-files-list: bbb-etherpad.placeholder.sh build/packages-template/bbb-etherpad
+      cache-urls-list: https://api.github.com/repos/mconf/ep_pad_ttl/commits https://api.github.com/repos/alangecker/bbb-etherpad-plugin/commits https://api.github.com/repos/mconf/ep_redis_publisher/commits https://api.github.com/repos/alangecker/bbb-etherpad-skin/commits
   build-bbb-bbb-web:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
       build-name: bbb-web
-      cache-file1-path: bigbluebutton-web
-      cache-file2-path: bbb-common-message
-      # cache-file3-path: bbb-common-web
+      cache-files-list: bigbluebutton-web bbb-common-message bbb-common-web
   build-bbb-fsesl-akka:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
       build-name: bbb-fsesl-akka
-      cache-file1-path: akka-bbb-fsesl
-      cache-file2-path: bbb-common-message
+      cache-files-list: akka-bbb-fsesl bbb-common-message
   build-bbb-html5:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
       build-name: bbb-html5
       build-list: bbb-html5-nodejs bbb-html5
-      cache-file1-path: bigbluebutton-html5
-      cache-file2-path: bigbluebutton-config/bigbluebutton-release
+      cache-files-list: bigbluebutton-html5
   build-bbb-freeswitch:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
       build-name: bbb-freeswitch
       build-list: bbb-freeswitch-core bbb-freeswitch-sounds
-      cache-file1-path: build/packages-template/bbb-freeswitch-core
-      cache-file2-path: build/packages-template/bbb-freeswitch-sounds
+      cache-files-list: build/packages-template/bbb-freeswitch-core build/packages-template/bbb-freeswitch-sounds
+      cache-urls-list: http://bigbluebutton.org/downloads/sounds.tar.gz
       # cache-file3-path: echo "CACHE_SOUNDS_KEY=$(curl -Is http://bigbluebutton.org/downloads/sounds.tar.gz | grep "Last-Modified" | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
       # cache-file4-path: echo "CACHE_SOUNDS_KEY=$(curl -Is http://bigbluebutton.org/downloads/sounds.tar.gz | grep "Last-Modified" | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
   build-others:

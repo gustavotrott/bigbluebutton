@@ -8,9 +8,9 @@ on:
         type: string
       build-list: 
         type: string
-      cache-file1-path: 
+      cache-files-list:
         type: string
-      cache-file2-path: 
+      cache-urls-list:
         type: string
 jobs:
   build:
@@ -29,8 +29,10 @@ jobs:
           git pull origin pull/${{ github.event.number }}/head:${{ github.head_ref }}
       - name: Set cache-key vars
         run: |
-          echo "CACHE_KEY_FILE1=$(git log -1 --format=%H -- ${{ inputs.cache-file1-path }})" >> $GITHUB_ENV
-          echo "CACHE_KEY_FILE2=$(git log -1 --format=%H -- ${{ inputs.cache-file2-path }})" >> $GITHUB_ENV
+          echo "CACHE_KEY_FILES=$(echo '${{ cache-files-list }}' | xargs -n1 git log -1 --format=%H -- | tr '\n' '-')" >> $GITHUB_ENV
+          echo "CACHE_KEY_URLS=$(echo '${{ cache-urls-list }}' | xargs -n 1 curl -Is | grep -i 'Last-Modified' | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
+          # echo "CACHE_KEY_FILE1=$(git log -1 --format=%H -- )" >> $GITHUB_ENV
+          # echo "CACHE_KEY_FILE2=$(git log -1 --format=%H -- ${{ inputs.cache-file2-path }})" >> $GITHUB_ENV
           echo "CACHE_BBB_RELEASE_KEY=$(git log -1 --format=%H -- bigbluebutton-config/bigbluebutton-release)" >> $GITHUB_ENV
           echo "FORCE_GIT_REV=0" >> $GITHUB_ENV #used by setup.sh
           echo "FORCE_COMMIT_DATE=0" >> $GITHUB_ENV #used by setup.sh
@@ -39,7 +41,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: artifacts.tar
-          key: ${{ runner.os }}-${{ inputs.build-name }}-${{ env.CACHE_KEY_FILE1 }}-${{ env.CACHE_KEY_FILE2 }}-${{ env.CACHE_BBB_RELEASE_KEY }}
+          key: ${{ runner.os }}-${{ inputs.build-name }}-${{ env.CACHE_KEY_FILES }}-${{ env.CACHE_KEY_URLS }}-${{ env.CACHE_BBB_RELEASE_KEY }}
       - if: ${{ steps.cache-action.outputs.cache-hit != 'true' }}
         name: Generate artifacts
         run: |
