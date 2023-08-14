@@ -33,7 +33,7 @@ jobs:
           echo "CACHE_KEY_URLS=$(echo '${{ inputs.cache-urls-list }}' | xargs -n 1 curl -Is | grep -i 'Last-Modified' | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
           # echo "CACHE_KEY_FILE1=$(git log -1 --format=%H -- )" >> $GITHUB_ENV
           # echo "CACHE_KEY_FILE2=$(git log -1 --format=%H -- ${{ inputs.cache-file2-path }})" >> $GITHUB_ENV
-          echo "CACHE_BBB_RELEASE_KEY=$(git log -1 --format=%H -- bigbluebutton-config/bigbluebutton-release)" >> $GITHUB_ENV
+          cat bigbluebutton-config/bigbluebutton-release >> $GITHUB_ENV
           echo "FORCE_GIT_REV=0" >> $GITHUB_ENV #used by setup.sh
           echo "FORCE_COMMIT_DATE=0" >> $GITHUB_ENV #used by setup.sh
       - name: Handle cache
@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: artifacts.tar
-          key: ${{ runner.os }}-${{ inputs.build-name }}-${{ env.CACHE_KEY_FILES }}-${{ env.CACHE_KEY_URLS }}-${{ env.CACHE_BBB_RELEASE_KEY }}
+          key: ${{ runner.os }}-${{ inputs.build-name }}-${{ env.BIGBLUEBUTTON_RELEASE }}-commits-${{ env.CACHE_KEY_FILES }}-urls-${{ env.CACHE_KEY_URLS }}
       - if: ${{ steps.cache-action.outputs.cache-hit != 'true' }}
         name: Generate artifacts
         run: |
