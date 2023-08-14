@@ -71,13 +71,14 @@ jobs:
     with:
       build-name: bbb-freeswitch
       build-list: bbb-freeswitch-core bbb-freeswitch-sounds
-      cache-files-list: build/packages-template/bbb-freeswitch-core build/packages-template/bbb-freeswitch-sounds
+      cache-files-list: freeswitch.placeholder.sh build/packages-template/bbb-freeswitch-core build/packages-template/bbb-freeswitch-sounds
       cache-urls-list: http://bigbluebutton.org/downloads/sounds.tar.gz
   build-bbb-webrtc:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
       build-name: bbb-webrtc
       build-list: bbb-webrtc-sfu bbb-webrtc-recorder
+      cache-files-list: bbb-webrtc-sfu.placeholder.sh bbb-webrtc-recorder.placeholder.sh build/packages-template/bbb-webrtc-sfu build/packages-template/bbb-webrtc-recorder
   build-others:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
