@@ -2,6 +2,14 @@ name: Create and Publish Docker Image
 
 on:
   workflow_call:
+    inputs:
+      build-name:
+        required: true
+        type: string
+      cache-file1-path: 
+        type: string
+      cache-file2-path: 
+        type: string
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -17,3 +25,27 @@ jobs:
           git config user.email "tests@bigbluebutton.org"
           git config pull.rebase false
           git pull origin pull/${{ github.event.number }}/head:${{ github.head_ref }}
+      - name: Set cache-key vars
+        run: |
+          echo "CACHE_KEY_FILE1=$(git log -1 --format=%H -- ${{ inputs.cache-file1-path }})" >> $GITHUB_ENV
+          echo "CACHE_KEY_FILE2=$(git log -1 --format=%H -- ${{ inputs.cache-file2-path }})" >> $GITHUB_ENV
+          echo "CACHE_BBB_RELEASE_KEY=$(git log -1 --format=%H -- ${{ inputs.cache-file1-path }})" >> $GITHUB_ENV
+          echo "FORCE_GIT_REV=0" >> $GITHUB_ENV #used by setup.sh
+          echo "FORCE_COMMIT_DATE=0" >> $GITHUB_ENV #used by setup.sh
+      - name: Handle cache
+        id: cache-action
+        uses: actions/cache@v3
+        with:
+          path: artifacts.tar
+          key: ${{ runner.os }}-${{ inputs.build-name }}-${{ env.CACHE_KEY_FILE1 }}-${{ env.CACHE_KEY_FILE2 }}-${{ env.CACHE_BBB_RELEASE_KEY }}
+      - if: ${{ steps.cache-action.outputs.cache-hit != 'true' }}
+        name: Generate artifacts
+        run: |
+          ./build/get_external_dependencies.sh
+          ./build/setup.sh ${{ inputs.build-name }}
+          tar cvf artifacts.tar artifacts/
+      - name: Archive packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts_${{ inputs.build-name }}.tar
+          path: artifacts.tar

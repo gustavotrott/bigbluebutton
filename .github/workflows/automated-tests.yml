@@ -24,24 +24,10 @@ jobs:
     steps:
       - name: Checkout ${{ github.event.pull_request.base.ref }}
         uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
-      - name: Handle cache
-        id: cache-action
-        uses: actions/cache@v3
         with:
-          path: artifacts.tar
-          key: ${{ runner.os }}-bbb-apps-akka-${{ env.CACHE_AKKA_APPS_KEY }}-${{ env.CACHE_COMMON_MSG_KEY }}-${{ env.CACHE_BBB_RELEASE_KEY }}
-      - if: ${{ steps.cache-action.outputs.cache-hit != 'true' }}
-        name: Generate artifacts
-        run: |
-          ./build/get_external_dependencies.sh
-          ./build/setup.sh bbb-apps-akka
-          tar cvf artifacts.tar artifacts/
-      - name: Archive packages
-        uses: actions/upload-artifact@v3
-        with:
-          name: artifacts_bbb-apps-akka.tar
-          path: |
-            artifacts.tar
+          build-name: bbb-apps-akka
+          cache-file1-path: akka-bbb-apps
+          cache-file2-path: bbb-common-message
   build-bbb-config:
     runs-on: ubuntu-20.04
     steps:
