@@ -67,7 +67,7 @@ jobs:
       build-name: bbb-web
       cache-file1-path: bigbluebutton-web
       cache-file2-path: bbb-common-message
-      cache-file3-path: bbb-common-web
+      # cache-file3-path: bbb-common-web
   build-bbb-fsesl-akka:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:
@@ -88,8 +88,8 @@ jobs:
       build-list: bbb-freeswitch-core bbb-freeswitch-sounds
       cache-file1-path: build/packages-template/bbb-freeswitch-core
       cache-file2-path: build/packages-template/bbb-freeswitch-sounds
-      cache-file3-path: echo "CACHE_SOUNDS_KEY=$(curl -Is http://bigbluebutton.org/downloads/sounds.tar.gz | grep "Last-Modified" | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
-      cache-file4-path: echo "CACHE_SOUNDS_KEY=$(curl -Is http://bigbluebutton.org/downloads/sounds.tar.gz | grep "Last-Modified" | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
+      # cache-file3-path: echo "CACHE_SOUNDS_KEY=$(curl -Is http://bigbluebutton.org/downloads/sounds.tar.gz | grep "Last-Modified" | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
+      # cache-file4-path: echo "CACHE_SOUNDS_KEY=$(curl -Is http://bigbluebutton.org/downloads/sounds.tar.gz | grep "Last-Modified" | md5sum | awk '{ print $1 }')" >> $GITHUB_ENV
   build-others:
     runs-on: ubuntu-20.04
     steps:
