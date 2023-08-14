@@ -20,14 +20,11 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build-bbb-apps-akka:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout ${{ github.event.pull_request.base.ref }}
-        uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
-        with:
-          build-name: bbb-apps-akka
-          cache-file1-path: akka-bbb-apps
-          cache-file2-path: bbb-common-message
+    uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
+    with:
+      build-name: bbb-apps-akka
+      cache-file1-path: akka-bbb-apps
+      cache-file2-path: bbb-common-message
   build-bbb-config:
     runs-on: ubuntu-20.04
     steps:
