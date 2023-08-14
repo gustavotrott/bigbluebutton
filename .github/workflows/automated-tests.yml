@@ -44,7 +44,6 @@ jobs:
     with:
       build-name: bbb-apps-akka
       build-list: bbb-playback bbb-playback-notes bbb-playback-podcast bbb-playback-presentation bbb-playback-screenshare bbb-playback-video bbb-record-core
-      cache-files-list: bigbluebutton-config/bigbluebutton-release
   build-bbb-etherpad:
     uses: gustavotrott/bigbluebutton/.github/workflows/automated-tests-checkout-step.yml@tests-ci-checkout-step-reusable
     with:

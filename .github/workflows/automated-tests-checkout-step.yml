@@ -37,6 +37,7 @@ jobs:
           echo "FORCE_GIT_REV=0" >> $GITHUB_ENV #used by setup.sh
           echo "FORCE_COMMIT_DATE=0" >> $GITHUB_ENV #used by setup.sh
       - name: Handle cache
+        if: inputs.cache-files-list != ''
         id: cache-action
         uses: actions/cache@v3
         with:
