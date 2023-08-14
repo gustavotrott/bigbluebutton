@@ -8,7 +8,7 @@ on:
         type: string
       build-list: 
         type: string
-        cache-file1-path: 
+      cache-file1-path: 
         type: string
       cache-file2-path: 
         type: string
