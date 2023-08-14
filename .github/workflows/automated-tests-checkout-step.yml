@@ -29,7 +29,7 @@ jobs:
         run: |
           echo "CACHE_KEY_FILE1=$(git log -1 --format=%H -- ${{ inputs.cache-file1-path }})" >> $GITHUB_ENV
           echo "CACHE_KEY_FILE2=$(git log -1 --format=%H -- ${{ inputs.cache-file2-path }})" >> $GITHUB_ENV
-          echo "CACHE_BBB_RELEASE_KEY=$(git log -1 --format=%H -- ${{ inputs.cache-file1-path }})" >> $GITHUB_ENV
+          echo "CACHE_BBB_RELEASE_KEY=$(git log -1 --format=%H -- bigbluebutton-config/bigbluebutton-release)" >> $GITHUB_ENV
           echo "FORCE_GIT_REV=0" >> $GITHUB_ENV #used by setup.sh
           echo "FORCE_COMMIT_DATE=0" >> $GITHUB_ENV #used by setup.sh
       - name: Handle cache
@@ -42,7 +42,7 @@ jobs:
         name: Generate artifacts
         run: |
           ./build/get_external_dependencies.sh
-          ./build/setup.sh ${{ inputs.build-name }}
+          echo "${{ inputs.build-list || inputs.build-name }}" | xargs -n 1 ./build/setup.sh
           tar cvf artifacts.tar artifacts/
       - name: Archive packages
         uses: actions/upload-artifact@v3
