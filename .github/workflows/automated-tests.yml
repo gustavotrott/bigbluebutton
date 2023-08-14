@@ -23,23 +23,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout ${{ github.event.pull_request.base.ref }}
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.base.ref }}
-          fetch-depth: 0 # Fetch all history
-      - name: Merge pr-${{ github.event.number }} into ${{ github.event.pull_request.base.ref }}
-        run: |
-          git config user.name "BBB Automated Tests"
-          git config user.email "tests@bigbluebutton.org"
-          git config pull.rebase false
-          git pull origin pull/${{ github.event.number }}/head:${{ github.head_ref }}
-      - name: Set cache-key vars
-        run: |
-          echo "CACHE_AKKA_APPS_KEY=$(git log -1 --format=%H -- akka-bbb-apps)" >> $GITHUB_ENV
-          echo "CACHE_COMMON_MSG_KEY=$(git log -1 --format=%H -- bbb-common-message)" >> $GITHUB_ENV
-          echo "CACHE_BBB_RELEASE_KEY=$(git log -1 --format=%H -- bigbluebutton-config/bigbluebutton-release)" >> $GITHUB_ENV
-          echo "FORCE_GIT_REV=0" >> $GITHUB_ENV #used by setup.sh
-          echo "FORCE_COMMIT_DATE=0" >> $GITHUB_ENV #used by setup.sh
+        uses: .github/workflows/automated-tests-checkout-step.yml
       - name: Handle cache
         id: cache-action
         uses: actions/cache@v3
