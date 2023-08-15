@@ -1,5 +1,4 @@
-name: Create and Publish Docker Image
-
+name: Build service and cache
 on:
   workflow_call:
     inputs:
@@ -13,7 +12,7 @@ on:
       cache-urls-list:
         type: string
 jobs:
-  build:
+  build-and-cache:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout ${{ github.event.pull_request.base.ref }}
