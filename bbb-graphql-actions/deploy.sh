@@ -16,11 +16,11 @@ fi
 npm run build
 
 # handle renaming circa dec 2023
-if [[ -d /usr/local/bigbluebutton/bbb-graphql-actions-adapter-server ]] ; then
-    sudo systemctl stop bbb-graphql-actions-adapter-server
-    sudo rm -f /usr/lib/systemd/system/bbb-graphql-actions-adapter-server.service
+if [[ -d /usr/local/bigbluebutton/bbb-graphql-actions ]] ; then
+    sudo systemctl stop bbb-graphql-actions
+    sudo rm -f /usr/lib/systemd/system/bbb-graphql-actions.service
     sudo systemctl daemon-reload
-    sudo rm -rf /usr/local/bigbluebutton/bbb-graphql-actions-adapter-server
+    sudo rm -rf /usr/local/bigbluebutton/bbb-graphql-actions
 fi
 
 mv -f dist/index.js dist/bbb-graphql-actions.js
