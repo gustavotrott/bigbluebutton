@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/iMDT/bbb-graphql-middleware/internal/common"
 	"github.com/iMDT/bbb-graphql-middleware/internal/hascli/retransmiter"
 	"github.com/iMDT/bbb-graphql-middleware/internal/msgpatch"
@@ -102,6 +103,8 @@ func handleSubscriptionMessage(hc *common.HasuraConnection, messageMap map[strin
 							return false
 						}
 
+						hashWouldBe := fmt.Sprintf("%v-%v", subscription.LastReceivedDataChecksum, dataChecksum)
+
 						//Store LastReceivedData Checksum
 						subscription.LastReceivedDataChecksum = dataChecksum
 						hc.BrowserConn.ActiveSubscriptionsMutex.Lock()
@@ -110,7 +113,21 @@ func handleSubscriptionMessage(hc *common.HasuraConnection, messageMap map[strin
 
 						//Apply msg patch when it supports it
 						if subscription.JsonPatchSupported {
-							msgpatch.PatchMessage(&messageMap, queryId, dataKey, dataAsJson, hc.BrowserConn)
+							//start := time.Now()
+							//formattedDate := start.Format("2006-01-02 15:04:05.00000")
+							//log.Infof("%s hashWouldBe Starting: %s", formattedDate, hashWouldBe)
+
+							common.GlobalCacheLocks.Lock(hashWouldBe)
+
+							common.TestTime("starting", hashWouldBe)
+
+							msgpatch.PatchMessage(&messageMap, queryId, dataKey, dataAsJson, hc.BrowserConn, hashWouldBe)
+
+							common.GlobalCacheLocks.Unlock(hashWouldBe)
+
+							//formattedDate = time.Now().Format("2006-01-02 15:04:05.00000")
+							//log.Infof("%s hashWouldBe Finishing: %s (%v)", formattedDate, hashWouldBe, time.Since(start))
+							common.TestTime("finishing", hashWouldBe)
 						}
 					}
 				}
