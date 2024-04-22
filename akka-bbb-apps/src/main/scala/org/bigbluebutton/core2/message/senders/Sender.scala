@@ -10,9 +10,14 @@ object Sender {
     outGW.send(ejectFromMeetingSystemEvent)
   }
 
-  def sendForceUserGraphqlReconnectionSysMsg(meetingId: String, userId: String, sessionToken: String, reason: String, outGW: OutMsgRouter): Unit = {
-    val ForceUserGraphqlReconnectionSysMsg = MsgBuilder.buildForceUserGraphqlReconnectionSysMsg(meetingId, userId, sessionToken, reason)
-    outGW.send(ForceUserGraphqlReconnectionSysMsg)
+  def sendForceUserGraphqlReconnectionSysMsg(meetingId: String, userId: String, sessionTokens: Vector[String], reason: String, outGW: OutMsgRouter): Unit = {
+    for {
+      sessionToken <- sessionTokens
+    } yield {
+      outGW.send(
+        MsgBuilder.buildForceUserGraphqlReconnectionSysMsg(meetingId, userId, sessionToken, reason)
+      )
+    }
   }
 
   def sendUserInactivityInspectMsg(meetingId: String, userId: String, responseDelay: Long, outGW: OutMsgRouter): Unit = {

@@ -13,7 +13,6 @@ case class UserDbModel(
     role:                   String,
     avatar:                 String = "",
     color:                  String = "",
-    sessionToken:           String = "",
     authToken:              String = "",
     authed:                 Boolean = false,
     joined:                 Boolean = false,
@@ -32,8 +31,9 @@ case class UserDbModel(
 
 class UserDbTableDef(tag: Tag) extends Table[UserDbModel](tag, None, "user") {
   override def * = (
-    meetingId,userId,extId,name,role,avatar,color, sessionToken, authToken, authed,joined,joinErrorCode,
-    joinErrorMessage, banned,loggedOut,guest,guestStatus,registeredOn,excludeFromDashboard, enforceLayout) <> (UserDbModel.tupled, UserDbModel.unapply)
+    meetingId,userId,extId,name,role,avatar,color, authToken, authed,joined,joinErrorCode,
+    joinErrorMessage, banned,loggedOut,guest,guestStatus,registeredOn,excludeFromDashboard, enforceLayout
+  ) <> (UserDbModel.tupled, UserDbModel.unapply)
   val meetingId = column[String]("meetingId", O.PrimaryKey)
   val userId = column[String]("userId", O.PrimaryKey)
   val extId = column[String]("extId")
@@ -41,7 +41,6 @@ class UserDbTableDef(tag: Tag) extends Table[UserDbModel](tag, None, "user") {
   val role = column[String]("role")
   val avatar = column[String]("avatar")
   val color = column[String]("color")
-  val sessionToken = column[String]("sessionToken")
   val authToken = column[String]("authToken")
   val authed = column[Boolean]("authed")
   val joined = column[Boolean]("joined")
@@ -69,7 +68,6 @@ object UserDAO {
           role = regUser.role,
           avatar = regUser.avatarURL,
           color = regUser.color,
-          sessionToken = regUser.sessionToken,
           authed = regUser.authed,
           joined = regUser.joined,
           joinErrorCode = None,
@@ -89,6 +87,7 @@ object UserDAO {
     ).onComplete {
         case Success(rowsAffected) => {
           DatabaseConnection.logger.debug(s"$rowsAffected row(s) inserted in User table!")
+          UserSessionTokenDAO.insert(meetingId, regUser.id, regUser.sessionToken.head, isPrimarySession = true)
           UserConnectionStatusDAO.insert(meetingId, regUser.id)
           UserCustomParameterDAO.insert(meetingId, regUser.id, regUser.customParameters)
           UserClientSettingsDAO.insert(regUser.id, meetingId)

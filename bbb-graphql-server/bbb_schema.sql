@@ -255,7 +255,6 @@ CREATE TABLE "user" (
 	"role" varchar(20),
 	"avatar" varchar(500),
 	"color" varchar(7),
-    "sessionToken" varchar(16),
     "authToken" varchar(16),
     "authed" bool,
     "joined" bool,
@@ -797,6 +796,18 @@ LEFT JOIN "user_connectionStatusMetrics" csm ON csm."meetingId" = u."meetingId" 
 GROUP BY u."meetingId", u."userId";
 
 CREATE INDEX "idx_user_connectionStatusMetrics_UnstableReport" ON "user_connectionStatusMetrics" ("meetingId", "userId") WHERE "status" != 'normal';
+
+CREATE TABLE "user_sessionToken" (
+	"meetingId" varchar(100),
+	"userId" varchar(50),
+	"sessionToken" varchar(16),
+	"isPrimarySession" boolean,
+	"createdAt" timestamp with time zone not null default current_timestamp,
+	"removedAt" timestamp with time zone,
+	constraint "user_sessionToken_pk" primary key ("meetingId", "userId","sessionToken")
+);
+
+--CREATE INDEX "idx_user_sessionToken" ON "user_sessionToken"("sessionToken");
 
 
 CREATE TABLE "user_graphqlConnection" (

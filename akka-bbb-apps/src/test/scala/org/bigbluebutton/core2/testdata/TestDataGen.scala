@@ -16,7 +16,7 @@ object TestDataGen {
     val color = "#ff6242"
 
     val ru = RegisteredUsers.create(meetingId, userId = id, extId, name, role,
-      authToken, sessionToken, avatarURL, color, guest, authed, GuestStatus.ALLOW, false, "", Map(), false)
+      authToken, Vector(sessionToken), avatarURL, color, guest, authed, GuestStatus.ALLOW, false, "", Map(), false)
 
     RegisteredUsers.add(users, ru, meetingId = "test")
     ru
