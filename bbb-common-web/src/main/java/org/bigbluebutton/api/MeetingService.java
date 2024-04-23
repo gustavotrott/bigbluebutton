@@ -142,6 +142,12 @@ public class MeetingService implements MessageListener {
     }
   }
 
+  public void registerUserSession(String meetingID, String internalUserId, String sessionToken) {
+    handle(
+            new RegisterUserSessionToken(meetingID, internalUserId, sessionToken)
+    );
+  }
+
   public UserSession getUserSessionWithUserId(String userId) {
     for (UserSession userSession : sessions.values()) {
       if (userSession.internalUserId.equals(userId)) {
@@ -471,6 +477,10 @@ public class MeetingService implements MessageListener {
       message.internalUserId, message.fullname, message.role,
       message.externUserID, message.authToken, message.sessionToken, message.avatarURL, message.guest,
       message.authed, message.guestStatus, message.excludeFromDashboard, message.enforceLayout, message.customParameters);
+  }
+
+  private void processRegisterUserSessionToken(RegisterUserSessionToken message) {
+    gw.registerUserSessionToken(message.meetingID, message.internalUserId, message.sessionToken);
   }
 
     public Meeting getMeeting(String meetingId) {
@@ -1215,6 +1225,8 @@ public class MeetingService implements MessageListener {
           processEndMeeting((EndMeeting) message);
         } else if (message instanceof RegisterUser) {
           processRegisterUser((RegisterUser) message);
+        } else if (message instanceof RegisterUserSessionToken) {
+          processRegisterUserSessionToken((RegisterUserSessionToken) message);
         } else if (message instanceof CreateBreakoutRoom) {
           processCreateBreakoutRoom((CreateBreakoutRoom) message);
         } else if (message instanceof PresentationUploadToken) {

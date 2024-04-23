@@ -8,7 +8,6 @@ case class UserSessionTokenDbModel (
        meetingId:               String,
        userId:                  String,
        sessionToken:            String,
-       isPrimarySession:        Boolean,
        createdAt:               java.sql.Timestamp,
        removedAt:               Option[java.sql.Timestamp],
 )
@@ -16,26 +15,24 @@ case class UserSessionTokenDbModel (
 
 class UserSessionTokenDbTableDef(tag: Tag) extends Table[UserSessionTokenDbModel](tag, None, "user_sessionToken") {
   override def * = (
-    meetingId, userId, sessionToken, isPrimarySession, createdAt, removedAt
+    meetingId, userId, sessionToken, createdAt, removedAt
   ) <> (UserSessionTokenDbModel.tupled, UserSessionTokenDbModel.unapply)
   val meetingId = column[String]("meetingId", O.PrimaryKey)
   val userId = column[String]("userId", O.PrimaryKey)
   val sessionToken = column[String]("sessionToken", O.PrimaryKey)
-  val isPrimarySession = column[Boolean]("isPrimarySession")
   val createdAt = column[java.sql.Timestamp]("createdAt")
   val removedAt = column[Option[java.sql.Timestamp]]("removedAt")
 }
 
 
 object UserSessionTokenDAO {
-  def insert(meetingId: String, userId: String, sessionToken: String, isPrimarySession:Boolean) = {
+  def insert(meetingId: String, userId: String, sessionToken: String) = {
     DatabaseConnection.db.run(
       TableQuery[UserSessionTokenDbTableDef].insertOrUpdate(
         UserSessionTokenDbModel(
           meetingId = meetingId,
           userId = userId,
           sessionToken = sessionToken,
-          isPrimarySession = isPrimarySession,
           createdAt = new java.sql.Timestamp(System.currentTimeMillis()),
           removedAt = None
         )

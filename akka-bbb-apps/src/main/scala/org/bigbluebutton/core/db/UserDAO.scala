@@ -87,7 +87,7 @@ object UserDAO {
     ).onComplete {
         case Success(rowsAffected) => {
           DatabaseConnection.logger.debug(s"$rowsAffected row(s) inserted in User table!")
-          UserSessionTokenDAO.insert(meetingId, regUser.id, regUser.sessionToken.head, isPrimarySession = true)
+          UserSessionTokenDAO.insert(meetingId, regUser.id, regUser.sessionToken.head)
           UserConnectionStatusDAO.insert(meetingId, regUser.id)
           UserCustomParameterDAO.insert(meetingId, regUser.id, regUser.customParameters)
           UserClientSettingsDAO.insert(regUser.id, meetingId)

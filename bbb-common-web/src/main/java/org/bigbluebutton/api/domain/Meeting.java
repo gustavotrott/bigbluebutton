@@ -265,6 +265,10 @@ public class Meeting {
 
 	}
 
+	public RegisteredUser getRegisteredUserWithUserId(String userId) {
+		return registeredUsers.get(userId);
+	}
+
 	public RegisteredUser getRegisteredUserWithAuthToken(String authToken) {
 		for (RegisteredUser ruser : registeredUsers.values()) {
 			if (ruser.authToken.equals(authToken)) {

@@ -801,13 +801,13 @@ CREATE TABLE "user_sessionToken" (
 	"meetingId" varchar(100),
 	"userId" varchar(50),
 	"sessionToken" varchar(16),
-	"isPrimarySession" boolean,
 	"createdAt" timestamp with time zone not null default current_timestamp,
 	"removedAt" timestamp with time zone,
 	constraint "user_sessionToken_pk" primary key ("meetingId", "userId","sessionToken")
 );
 
 --CREATE INDEX "idx_user_sessionToken" ON "user_sessionToken"("sessionToken");
+create view "v_user_sessionToken" as select * from "user_sessionToken";
 
 
 CREATE TABLE "user_graphqlConnection" (
