@@ -12,16 +12,14 @@ import { notify } from '/imports/ui/services/notification';
 import deviceInfo from '/imports/utils/deviceInfo';
 import browserInfo from '/imports/utils/browserInfo';
 import getFromUserSettings from '/imports/ui/services/users-settings';
+import * as uuidLib from 'uuid';
 import VideoPreviewService from '../video-preview/service';
 import Storage from '/imports/ui/services/storage/session';
 import BBBStorage from '/imports/ui/services/storage';
 import logger from '/imports/startup/client/logger';
 import { debounce } from '/imports/utils/debounce';
 import { partition } from '/imports/utils/array-utils';
-import {
-  getSortingMethod,
-  sortVideoStreams,
-} from '/imports/ui/components/video-provider/stream-sorting';
+import { getSortingMethod, sortVideoStreams } from '/imports/ui/components/video-provider/stream-sorting';
 import getFromMeetingSettings from '/imports/ui/services/meeting-settings';
 
 const CAMERA_PROFILES = window.meetingClientSettings.public.kurento.cameraProfiles;
@@ -75,6 +73,7 @@ class VideoService {
     this.isMobile = deviceInfo.isMobile;
     this.isSafari = browserInfo.isSafari;
     this.numberOfDevices = 0;
+    this.tabId = uuidLib.v4();
 
     this.record = null;
     this.hackRecordViewer = null;
@@ -84,7 +83,7 @@ class VideoService {
       this.updateNumberOfDevices = this.updateNumberOfDevices.bind(this);
       // Safari doesn't support ondevicechange
       if (!this.isSafari) {
-        navigator.mediaDevices.ondevicechange = event => this.updateNumberOfDevices();
+        navigator.mediaDevices.ondevicechange = (event) => this.updateNumberOfDevices();
       }
       this.updateNumberOfDevices();
     }
@@ -118,8 +117,8 @@ class VideoService {
 
   fetchNumberOfDevices(devices) {
     const deviceIds = [];
-    devices.forEach(d => {
-      const validDeviceId = d.deviceId !== '' && !deviceIds.includes(d.deviceId)
+    devices.forEach((d) => {
+      const validDeviceId = d.deviceId !== '' && !deviceIds.includes(d.deviceId);
       if (d.kind === 'videoinput' && validDeviceId) {
         deviceIds.push(d.deviceId);
       }
@@ -132,7 +131,7 @@ class VideoService {
     if (devices) {
       this.numberOfDevices = this.fetchNumberOfDevices(devices);
     } else {
-      navigator.mediaDevices.enumerateDevices().then(devices => {
+      navigator.mediaDevices.enumerateDevices().then((devices) => {
         this.numberOfDevices = this.fetchNumberOfDevices(devices);
       });
     }
@@ -153,14 +152,14 @@ class VideoService {
       {
         meetingId: Auth.meetingID,
         userId: Auth.userID,
+        stream: { $regex: `^${Auth.userID}${TOKEN}${this.tabId}` },
       }, { fields: { deviceId: 1 } },
     ).fetch();
 
-    let deviceIds = [];
-    streams.forEach(s => {
+    const deviceIds = [];
+    streams.forEach((s) => {
       deviceIds.push(s.deviceId);
-    }
-    );
+    });
     Session.set('deviceIds', deviceIds.join());
   }
 
@@ -173,10 +172,11 @@ class VideoService {
         {
           meetingId: Auth.meetingID,
           userId: Auth.userID,
+          stream: { $regex: `^${Auth.userID}${TOKEN}${this.tabId}` },
         }, { fields: { stream: 1 } },
       ).fetch();
 
-      streams.forEach(s => sendUserUnshareWebcam(s.stream));
+      streams.forEach((s) => sendUserUnshareWebcam(s.stream));
       this.exitedVideo();
     }
   }
@@ -192,11 +192,12 @@ class VideoService {
       {
         meetingId: Auth.meetingID,
         userId: Auth.userID,
+        stream: { $regex: `^${Auth.userID}${TOKEN}${this.tabId}` },
       }, { fields: { stream: 1 } },
     ).fetch();
 
-    const hasTargetStream = streams.some(s => s.stream === cameraId);
-    const hasOtherStream = streams.some(s => s.stream !== cameraId);
+    const hasTargetStream = streams.some((s) => s.stream === cameraId);
+    const hasOtherStream = streams.some((s) => s.stream !== cameraId);
 
     // Check if the target (cameraId) stream exists in the remote collection.
     // If it does, means it was successfully shared. So do the full stop procedure.
@@ -223,8 +224,9 @@ class VideoService {
       {
         meetingId: Auth.meetingID,
         userId: Auth.userID,
+        stream: { $regex: `^${Auth.userID}${TOKEN}${this.tabId}` },
       }, { fields: { deviceId: 1 } },
-    ).fetch().map(vs => vs.deviceId);
+    ).fetch().map((vs) => vs.deviceId);
 
     return devices;
   }
@@ -246,11 +248,11 @@ class VideoService {
     return PAGINATION_TOGGLE_ENABLED && (this.getMyPageSize() > 0);
   }
 
-  isPaginationEnabled () {
+  isPaginationEnabled() {
     return Settings.application.paginationEnabled && (this.getMyPageSize() > 0);
   }
 
-  setNumberOfPages (numberOfPublishers, numberOfSubscribers, pageSize) {
+  setNumberOfPages(numberOfPublishers, numberOfSubscribers, pageSize) {
     // Page size 0 means no pagination, return itself
     if (pageSize === 0) return 0;
 
@@ -272,21 +274,21 @@ class VideoService {
     return this.numberOfPages;
   }
 
-  getNumberOfPages () {
+  getNumberOfPages() {
     return this.numberOfPages;
   }
 
-  setCurrentVideoPageIndex (newVideoPageIndex) {
+  setCurrentVideoPageIndex(newVideoPageIndex) {
     if (this.currentVideoPageIndex !== newVideoPageIndex) {
       this.currentVideoPageIndex = newVideoPageIndex;
     }
   }
 
-  getCurrentVideoPageIndex () {
+  getCurrentVideoPageIndex() {
     return this.currentVideoPageIndex;
   }
 
-  calculateNextPage () {
+  calculateNextPage() {
     if (this.numberOfPages === 0) {
       return 0;
     }
@@ -294,7 +296,7 @@ class VideoService {
     return ((this.currentVideoPageIndex + 1) % this.numberOfPages + this.numberOfPages) % this.numberOfPages;
   }
 
-  calculatePreviousPage () {
+  calculatePreviousPage() {
     if (this.numberOfPages === 0) {
       return 0;
     }
@@ -316,7 +318,7 @@ class VideoService {
     return this.currentVideoPageIndex;
   }
 
-  getPageSizeDictionary () {
+  getPageSizeDictionary() {
     // Dynamic page sizes are disabled. Fetch the stock page sizes.
     if (!PAGINATION_THRESHOLDS_ENABLED || PAGINATION_THRESHOLDS.length <= 0) {
       return !this.isMobile ? DESKTOP_PAGE_SIZES : MOBILE_PAGE_SIZES;
@@ -328,7 +330,7 @@ class VideoService {
     const userCount = UserListService.getUserCount();
     const processThreshold = (threshold = {
       desktopPageSizes: DESKTOP_PAGE_SIZES,
-      mobilePageSizes: MOBILE_PAGE_SIZES
+      mobilePageSizes: MOBILE_PAGE_SIZES,
     }) => {
       // We don't demand that all page sizes should be set in pagination profiles.
       // That saves us some space because don't necessarily need to scale mobile
@@ -336,9 +338,8 @@ class VideoService {
       // If eg mobile isn't set, then return the default value.
       if (!this.isMobile) {
         return threshold.desktopPageSizes || DESKTOP_PAGE_SIZES;
-      } else {
-        return threshold.mobilePageSizes || MOBILE_PAGE_SIZES;
       }
+      return threshold.mobilePageSizes || MOBILE_PAGE_SIZES;
     };
 
     // Short-circuit: no threshold yet, return stock values (processThreshold has a default arg)
@@ -354,7 +355,7 @@ class VideoService {
     }
   }
 
-  setPageSize (size) {
+  setPageSize(size) {
     if (this.pageSize !== size) {
       this.pageSize = size;
     }
@@ -362,7 +363,7 @@ class VideoService {
     return this.pageSize;
   }
 
-  getMyPageSize () {
+  getMyPageSize() {
     let size;
     const myRole = this.getMyRole();
     const pageSizes = this.getPageSizeDictionary();
@@ -372,30 +373,30 @@ class VideoService {
         break;
       case ROLE_VIEWER:
       default:
-        size = pageSizes.viewer
+        size = pageSizes.viewer;
     }
 
     return this.setPageSize(size);
   }
 
-  getGridSize () {
+  getGridSize() {
     let size;
     const myRole = this.getMyRole();
     const gridSizes = !this.isMobile ? DESKTOP_GRID_SIZES : MOBILE_GRID_SIZES;
-    
+
     switch (myRole) {
       case ROLE_MODERATOR:
         size = gridSizes.moderator;
         break;
       case ROLE_VIEWER:
       default:
-        size = gridSizes.viewer
+        size = gridSizes.viewer;
     }
 
     return size;
   }
 
-  getVideoPage (streams, pageSize) {
+  getVideoPage(streams, pageSize) {
     // Publishers are taken into account for the page size calculations. They
     // also appear on every page. Same for pinned user.
     const [filtered, others] = partition(streams, (vs) => Auth.userID === vs.userId || vs.pin);
@@ -424,7 +425,7 @@ class VideoService {
     const usersId = VideoStreams.find(
       { meetingId: Auth.meetingID },
       { fields: { userId: 1 } },
-    ).fetch().map(user => user.userId);
+    ).fetch().map((user) => user.userId);
 
     return usersId;
   }
@@ -452,7 +453,7 @@ class VideoService {
     if (isGridEnabled) {
       users = Users.find(
         { meetingId: Auth.meetingID },
-        { fields: { loggedOut: 1, left: 1, ...neededDataTypes} },
+        { fields: { loggedOut: 1, left: 1, ...neededDataTypes } },
       ).fetch();
     }
 
@@ -476,7 +477,7 @@ class VideoService {
         const streamUsers = streams.map((stream) => stream.userId);
 
         gridUsers = users.filter(
-          (user) => !user.loggedOut && !user.left && !streamUsers.includes(user.userId)
+          (user) => !user.loggedOut && !user.left && !streamUsers.includes(user.userId),
         ).map((user) => ({
           isGridItem: true,
           ...user,
@@ -486,7 +487,7 @@ class VideoService {
       return {
         streams: sortVideoStreams(streams, DEFAULT_SORTING),
         gridUsers,
-        totalNumberOfStreams: streams.length
+        totalNumberOfStreams: streams.length,
       };
     }
 
@@ -496,7 +497,7 @@ class VideoService {
       const streamUsers = paginatedStreams.map((stream) => stream.userId);
 
       gridUsers = users.filter(
-        (user) => !user.loggedOut && !user.left && !streamUsers.includes(user.userId)
+        (user) => !user.loggedOut && !user.left && !streamUsers.includes(user.userId),
       ).map((user) => ({
         isGridItem: true,
         ...user,
@@ -580,24 +581,28 @@ class VideoService {
   }
 
   buildStreamName(userId, deviceId) {
-    return `${userId}${TOKEN}${deviceId}`;
+    return `${userId}${TOKEN}${this.tabId}${TOKEN}${deviceId}`;
   }
 
   hasVideoStream() {
-    const videoStreams = VideoStreams.findOne({ userId: Auth.userID },
-      { fields: {} });
+    const videoStreams = VideoStreams.findOne({
+      userId: Auth.userID,
+      stream: { $regex: `^${Auth.userID}${TOKEN}${this.tabId}` },
+    },
+    { fields: {} });
+
     return !!videoStreams;
   }
 
   hasStream(streams, stream) {
-    return streams.find(s => s.stream === stream);
+    return streams.find((s) => s.stream === stream);
   }
 
   getMediaServerAdapter() {
     return getFromMeetingSettings('media-server-video', DEFAULT_VIDEO_MEDIA_SERVER);
   }
 
-  getMyRole () {
+  getMyRole() {
     return Users.findOne({ userId: Auth.userID },
       { fields: { role: 1 } })?.role;
   }
@@ -631,7 +636,7 @@ class VideoService {
           role: ROLE_MODERATOR,
         },
         { fields: { userId: 1 } },
-      ).fetch().map(user => user.userId);
+      ).fetch().map((user) => user.userId);
 
       return streams.reduce((result, stream) => {
         const { userId } = stream;
@@ -648,7 +653,7 @@ class VideoService {
   }
 
   filterLocalOnly(streams) {
-    return streams.filter(stream => stream.userId === Auth.userID);
+    return streams.filter((stream) => stream.userId === Auth.userID);
   }
 
   disableCam() {
@@ -701,7 +706,7 @@ class VideoService {
 
   getLocalVideoStreamsCount() {
     const localStreams = VideoStreams.find(
-      { userId: Auth.userID }
+      { userId: Auth.userID, stream: { $regex: `^${Auth.userID}${TOKEN}${this.tabId}` }},
     ).count();
 
     return localStreams;
@@ -746,6 +751,7 @@ class VideoService {
       {
         meetingId: Auth.meetingID,
         userId: Auth.userID,
+        stream: { $regex: `^${Auth.userID}${TOKEN}${this.tabId}` },
         deviceId,
       }, { fields: { stream: 1 } },
     );
@@ -767,20 +773,23 @@ class VideoService {
   }
 
   isLocalStream(cameraId) {
-    return cameraId?.startsWith(Auth.userID);
+    return cameraId?.startsWith(Auth.userID + TOKEN + this.tabId);
   }
 
   playStart(cameraId) {
     if (this.isLocalStream(cameraId)) {
+      alert('Im connected!');
       this.sendUserShareWebcam(cameraId);
       this.joinedVideo();
+    } else {
+      alert('Im not connected!');
     }
   }
 
   getCameraProfile() {
     const profileId = BBBStorage.getItem('WebcamProfileId') || '';
-    const cameraProfile = CAMERA_PROFILES.find(profile => profile.id === profileId)
-      || CAMERA_PROFILES.find(profile => profile.default)
+    const cameraProfile = CAMERA_PROFILES.find((profile) => profile.id === profileId)
+      || CAMERA_PROFILES.find((profile) => profile.default)
       || CAMERA_PROFILES[0];
     const deviceId = BBBStorage.getItem('WebcamDeviceId');
     if (deviceId) {
@@ -830,11 +839,11 @@ class VideoService {
     const locks = {
       videoLocked: this.isUserLocked(),
       camCapReached: this.hasCapReached() && !this.hasVideoStream(),
-      meteorDisconnected: !Meteor.status().connected
+      meteorDisconnected: !Meteor.status().connected,
     };
     const locksKeys = Object.keys(locks);
-    const disableReason = locksKeys.filter( i => locks[i]).shift();
-    return disableReason ? disableReason : false;
+    const disableReason = locksKeys.filter((i) => locks[i]).shift();
+    return disableReason || false;
   }
 
   getRole(isLocal) {
@@ -845,7 +854,7 @@ class VideoService {
     if (this.userParameterProfile === null) {
       this.userParameterProfile = getFromUserSettings(
         'bbb_preferred_camera_profile',
-        (CAMERA_PROFILES.find(i => i.default) || {}).id || null,
+        (CAMERA_PROFILES.find((i) => i.default) || {}).id || null,
       );
     }
 
@@ -863,17 +872,17 @@ class VideoService {
       && this.numberOfDevices > 1;
   }
 
-  isProfileBetter (newProfileId, originalProfileId) {
+  isProfileBetter(newProfileId, originalProfileId) {
     return CAMERA_PROFILES.findIndex(({ id }) => id === newProfileId)
       > CAMERA_PROFILES.findIndex(({ id }) => id === originalProfileId);
   }
 
-  applyBitrate (peer, bitrate) {
-    const peerConnection = peer.peerConnection;
+  applyBitrate(peer, bitrate) {
+    const { peerConnection } = peer;
     if ('RTCRtpSender' in window
       && 'setParameters' in window.RTCRtpSender.prototype
       && 'getParameters' in window.RTCRtpSender.prototype) {
-      peerConnection.getSenders().forEach(sender => {
+      peerConnection.getSenders().forEach((sender) => {
         const { track } = sender;
         if (track && track.kind === 'video') {
           const parameters = sender.getParameters();
@@ -895,21 +904,21 @@ class VideoService {
                   extraInfo: { bitrate },
                 }, `Bitrate changed: ${bitrate}`);
               })
-              .catch(error => {
+              .catch((error) => {
                 logger.warn({
                   logCode: 'video_provider_bitratechange_failed',
                   extraInfo: { bitrate, errorMessage: error.message, errorCode: error.code },
-                }, `Bitrate change failed.`);
+                }, 'Bitrate change failed.');
               });
           }
         }
-      })
+      });
     }
   }
 
   // Some browsers (mainly iOS Safari) garble the stream if a constraint is
   // reconfigured without propagating previous height/width info
-  reapplyResolutionIfNeeded (track, constraints) {
+  reapplyResolutionIfNeeded(track, constraints) {
     if (typeof track.getSettings !== 'function') {
       return constraints;
     }
@@ -927,7 +936,7 @@ class VideoService {
     return constraints;
   }
 
-  applyCameraProfile (peer, profileId) {
+  applyCameraProfile(peer, profileId) {
     const profile = CAMERA_PROFILES.find((targetProfile) => targetProfile.id === profileId);
 
     // When this should be skipped:
@@ -974,11 +983,11 @@ class VideoService {
     peer.currentProfileId = profileId;
   }
 
-  getThreshold (numberOfPublishers) {
+  getThreshold(numberOfPublishers) {
     let targetThreshold = { threshold: 0, profile: 'original' };
     let finalThreshold = { threshold: 0, profile: 'original' };
 
-    for(let mapIndex = 0; mapIndex < CAMERA_QUALITY_THRESHOLDS.length; mapIndex++) {
+    for (let mapIndex = 0; mapIndex < CAMERA_QUALITY_THRESHOLDS.length; mapIndex++) {
       targetThreshold = CAMERA_QUALITY_THRESHOLDS[mapIndex];
       if (targetThreshold.threshold <= numberOfPublishers) {
         finalThreshold = targetThreshold;
@@ -988,7 +997,7 @@ class VideoService {
     return finalThreshold;
   }
 
-  getPreloadedStream () {
+  getPreloadedStream() {
     if (this.deviceId == null) return;
     return VideoPreviewService.getStream(this.deviceId);
   }
@@ -1050,7 +1059,7 @@ class VideoService {
           }
         });
         stats[peerId] = videoStats;
-      })
+      }),
     );
 
     return stats;
@@ -1066,36 +1075,36 @@ const videoService = new VideoService();
 export default {
   storeDeviceIds: () => videoService.storeDeviceIds(),
   exitVideo: (sendUserUnshareWebcam) => videoService.exitVideo(sendUserUnshareWebcam),
-  joinVideo: deviceId => videoService.joinVideo(deviceId),
+  joinVideo: (deviceId) => videoService.joinVideo(deviceId),
   stopVideo: (cameraId, sendUserUnshareWebcam) => videoService.stopVideo(
     cameraId,
     sendUserUnshareWebcam,
   ),
   getVideoStreams: () => videoService.getVideoStreams(),
   getInfo: () => videoService.getInfo(),
-  getMyStreamId: deviceId => videoService.getMyStreamId(deviceId),
+  getMyStreamId: (deviceId) => videoService.getMyStreamId(deviceId),
   isUserLocked: () => videoService.isUserLocked(),
   lockUser: (sendUserUnshareWebcam) => videoService.lockUser(sendUserUnshareWebcam),
   getAuthenticatedURL: () => videoService.getAuthenticatedURL(),
-  isLocalStream: cameraId => videoService.isLocalStream(cameraId),
+  isLocalStream: (cameraId) => videoService.isLocalStream(cameraId),
   hasVideoStream: () => videoService.hasVideoStream(),
   getStatus: () => videoService.getStatus(),
   disableReason: () => videoService.disableReason(),
-  playStart: cameraId => videoService.playStart(cameraId),
+  playStart: (cameraId) => videoService.playStart(cameraId),
   getCameraProfile: () => videoService.getCameraProfile(),
   addCandidateToPeer: (peer, candidate, cameraId) => videoService.addCandidateToPeer(peer, candidate, cameraId),
   processInboundIceQueue: (peer, cameraId) => videoService.processInboundIceQueue(peer, cameraId),
-  getRole: isLocal => videoService.getRole(isLocal),
+  getRole: (isLocal) => videoService.getRole(isLocal),
   getMediaServerAdapter: () => videoService.getMediaServerAdapter(),
   getRecord: () => videoService.getRecord(),
   getSharedDevices: () => videoService.getSharedDevices(),
   getUserParameterProfile: () => videoService.getUserParameterProfile(),
   isMultipleCamerasEnabled: () => videoService.isMultipleCamerasEnabled(),
-  mirrorOwnWebcam: userId => videoService.mirrorOwnWebcam(userId),
+  mirrorOwnWebcam: (userId) => videoService.mirrorOwnWebcam(userId),
   hasCapReached: () => videoService.hasCapReached(),
   onBeforeUnload: (sendUserUnshareWebcam) => videoService.onBeforeUnload(sendUserUnshareWebcam),
-  notify: message => notify(message, 'error', 'video'),
-  updateNumberOfDevices: devices => videoService.updateNumberOfDevices(devices),
+  notify: (message) => notify(message, 'error', 'video'),
+  updateNumberOfDevices: (devices) => videoService.updateNumberOfDevices(devices),
   applyCameraProfile: debounce(
     videoService.applyCameraProfile.bind(videoService),
     CAMERA_QUALITY_THR_DEBOUNCE,
@@ -1107,7 +1116,7 @@ export default {
   getCurrentVideoPageIndex: () => videoService.getCurrentVideoPageIndex(),
   getPreviousVideoPage: () => videoService.getPreviousVideoPage(),
   getNextVideoPage: () => videoService.getNextVideoPage(),
-  getPageChangeDebounceTime: () => { return PAGE_CHANGE_DEBOUNCE_TIME },
+  getPageChangeDebounceTime: () => PAGE_CHANGE_DEBOUNCE_TIME,
   getUsersIdFromVideoStreams: () => videoService.getUsersIdFromVideoStreams(),
   shouldRenderPaginationToggle: () => videoService.shouldRenderPaginationToggle(),
   getVideoPinByUser: (userId) => videoService.getVideoPinByUser(userId),
