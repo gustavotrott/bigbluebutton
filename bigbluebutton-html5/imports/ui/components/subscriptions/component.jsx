@@ -17,21 +17,21 @@ const SUBSCRIPTIONS = [
   // 'captions',
   // 'voiceUsers',
   // 'screenshare',
-  'users-settings',
-  'users-infos',
-  'meeting-time-remaining',
+  // 'users-settings',
+  // 'users-infos',
+  // 'meeting-time-remaining',
   // 'record-meetings',
-  'video-streams',
-  'voice-call-states',
+  // 'video-streams',
+  // 'voice-call-states',
   // 'breakouts',
   // 'breakouts-history',
-  'pads',
-  'pads-sessions',
-  'pads-updates',
+  // 'pads',
+  // 'pads-sessions',
+  // 'pads-updates',
   // 'notifications',
-  'layout-meetings',
-  'user-reaction',
-  'timer',
+  // 'layout-meetings',
+  // 'user-reaction',
+  // 'timer',
 ];
 const {
   localBreakoutsSync,
@@ -49,18 +49,10 @@ let oldRole = '';
 class Subscriptions extends Component {
   componentDidMount() {
     Session.set('subscriptionsReady', false);
-  }
-
-  componentDidUpdate() {
-    const { subscriptionsReady } = this.props;
-    const clientSettings = JSON.parse(sessionStorage.getItem('clientStartupSettings') || '{}')
-    console.log('clientSettings', clientSettings);
-    if (subscriptionsReady || clientSettings.skipMeteorConnection) {
-      Session.set('subscriptionsReady', true);
-      const event = new Event(EVENT_NAME_SUBSCRIPTION_READY);
-      window.dispatchEvent(event);
-      Session.set('globalIgnoreDeletes', false);
-    }
+    Session.set('subscriptionsReady', true);
+    const event = new Event(EVENT_NAME_SUBSCRIPTION_READY);
+    window.dispatchEvent(event);
+    Session.set('globalIgnoreDeletes', false);
   }
 
   render() {
@@ -102,7 +94,6 @@ export default withTracker(() => {
   const currentUser = Users.findOne({ userId: requesterUserId }, { fields: { role: 1 } });
 
   let subscriptionsHandlers = SUBSCRIPTIONS.map((name) => {
-    if (clientSettings.skipMeteorConnection) return null;
     let subscriptionHandlers = subscriptionErrorHandler;
     if (
       (!TYPING_INDICATOR_ENABLED && name.indexOf('typing') !== -1) ||
@@ -150,7 +141,7 @@ export default withTracker(() => {
 
   subscriptionsHandlers = subscriptionsHandlers.filter((obj) => obj);
   const ready = subscriptionsHandlers
-    .every((handler) => handler.ready() || clientSettings.skipMeteorConnection);
+    .every((handler) => handler.ready());
   // TODO: Refactor all the late subscribers
   if (ready) {
     Object.values(localCollectionRegistry).forEach((localCollection) =>

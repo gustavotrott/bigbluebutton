@@ -7,7 +7,6 @@ import AudioCaptionsLiveContainer from '/imports/ui/components/audio/audio-graph
 import { notify } from '/imports/ui/services/notification';
 import getFromUserSettings from '/imports/ui/services/users-settings';
 import deviceInfo from '/imports/utils/deviceInfo';
-import UserInfos from '/imports/api/users-infos';
 import Settings from '/imports/ui/services/settings';
 import MediaService from '/imports/ui/components/media/service';
 import { isPresentationEnabled, isExternalVideoEnabled } from '/imports/ui/services/features';
@@ -103,10 +102,14 @@ const AppContainer = (props) => {
     isModerator: user.isModerator,
     presenter: user.presenter,
     speechLocale: user.speechLocale,
+    inactivityWarningDisplay: user.inactivityWarningDisplay,
+    inactivityWarningTimeoutSecs: user.inactivityWarningTimeoutSecs,
   }));
 
   const isModerator = currentUserData?.isModerator;
   const isPresenter = currentUserData?.presenter;
+  const inactivityWarningDisplay = currentUserData?.inactivityWarningDisplay;
+  const inactivityWarningTimeoutSecs = currentUserData?.inactivityWarningTimeoutSecs;
 
   const { sidebarContentPanel, isOpen: sidebarContentIsOpen } = sidebarContent;
   const { sidebarNavPanel, isOpen: sidebarNavigationIsOpen } = sidebarNavigation;
@@ -120,7 +123,7 @@ const AppContainer = (props) => {
       layoutContextDispatch
       && (typeof meetingLayout !== 'undefined')
       && (layoutType.current !== meetingLayout)
-      && isSharedNotesPinned
+      && sharedNotesInput?.isPinned
     ) {
       layoutType.current = meetingLayout;
       MediaService.setPresentationIsOpen(layoutContextDispatch, true);
@@ -168,7 +171,7 @@ const AppContainer = (props) => {
   const isSharingVideo = !!currentMeeting?.externalVideo?.externalVideoUrl;
 
   useEffect(() => {
-    MediaService.buildLayoutWhenPresentationAreaIsDisabled(layoutContextDispatch, isSharingVideo);
+    MediaService.buildLayoutWhenPresentationAreaIsDisabled(layoutContextDispatch, isSharingVideo, sharedNotesInput?.isPinned);
   });
 
   const shouldShowExternalVideo = isExternalVideoEnabled() && isSharingVideo;
@@ -236,6 +239,8 @@ const AppContainer = (props) => {
           setLocalSettings,
           genericComponentId: genericComponent.genericComponentId,
           audioCaptions: <AudioCaptionsLiveContainer speechLocale={currentUserData?.speechLocale} />,
+          inactivityWarningDisplay,
+          inactivityWarningTimeoutSecs,
         }}
         {...otherProps}
       />
@@ -282,10 +287,6 @@ export default withTracker(() => {
 
   const meetingPresentationIsOpen = !layout.presentationMinimized;
 
-  const UserInfo = UserInfos.find({
-    meetingId: Auth.meetingID,
-    requesterUserId: Auth.userID,
-  }).fetch();
 
   const AppSettings = Settings.application;
   const { selectedLayout, pushLayout } = AppSettings;
@@ -305,7 +306,6 @@ export default withTracker(() => {
     hasBreakoutRooms: getBreakoutRooms().length > 0,
     customStyle: getFromUserSettings('bbb_custom_style', false),
     customStyleUrl,
-    UserInfo,
     notify,
     isPhone: deviceInfo.isPhone,
     isRTL: document.documentElement.getAttribute('dir') === 'rtl',
