@@ -32,10 +32,8 @@ object UserCameraDAO {
         )
       )
     ).onComplete {
-        case Success(rowsAffected) => {
-          DatabaseConnection.logger.debug(s"$rowsAffected row(s) inserted on user_webcam table!")
-        }
-        case Failure(e)            => DatabaseConnection.logger.debug(s"Error inserting webcam: $e")
+        case Success(rowsAffected) => DatabaseConnection.logger.debug(s"$rowsAffected row(s) inserted on user_webcam table!")
+        case Failure(e) => DatabaseConnection.logger.error(s"Error inserting webcam: $e")
       }
   }
 
@@ -46,7 +44,7 @@ object UserCameraDAO {
         .delete
     ).onComplete {
         case Success(rowsAffected) => DatabaseConnection.logger.debug(s"Webcam ${streamId} deleted")
-        case Failure(e)            => DatabaseConnection.logger.debug(s"Error deleting webcam: $e")
+        case Failure(e)            => DatabaseConnection.logger.error(s"Error deleting webcam: $e")
       }
   }
 

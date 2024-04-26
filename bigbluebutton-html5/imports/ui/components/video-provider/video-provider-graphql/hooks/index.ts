@@ -553,7 +553,7 @@ export const useGridUsers = (users = []) => {
 
 export const useHasVideoStream = () => {
   const { streams } = useStreams();
-  return streams.some((s) => s.userId === Auth.userID);
+  return streams.some((s) => s.userId === Auth.userID && s.stream.startsWith(`${Auth.userID}_${videoService.getTabId()}`));
 };
 
 export const useHasStream = (streams, stream) => {
@@ -589,7 +589,12 @@ export const useFilterModeratorOnly = (streams) => {
 
 export const useExitVideo = () => {
   const [cameraBroadcastStop] = useMutation(CAMERA_BROADCAST_STOP);
-  const [getOwnVideoStreams] = useLazyQuery(OWN_VIDEO_STREAMS_QUERY, { variables: { userId: Auth.userID } });
+  const [getOwnVideoStreams] = useLazyQuery(OWN_VIDEO_STREAMS_QUERY, {
+    variables: {
+      userId: Auth.userID,
+      streamIdPrefix: `${Auth.userID}_${videoService.getTabId()}%`
+    }
+  });
 
   const exitVideo = useCallback(() => {
     const { isConnected } = getVideoState();

@@ -3,6 +3,7 @@
 import { Meteor } from 'meteor/meteor';
 import { Tracker } from 'meteor/tracker';
 import { Session } from 'meteor/session';
+import * as uuidLib from 'uuid';
 import Settings from '/imports/ui/services/settings';
 import Auth from '/imports/ui/services/auth';
 import Meetings from '/imports/api/meetings';
@@ -77,6 +78,7 @@ class VideoService {
     this.isMobile = deviceInfo.isMobile;
     this.isSafari = browserInfo.isSafari;
     this.numberOfDevices = 0;
+    this.tabId = uuidLib.v4();
 
     this.record = null;
     this.hackRecordViewer = null;
@@ -169,7 +171,7 @@ class VideoService {
 
   storeDeviceIds(streams) {
     let deviceIds = [];
-    streams.filter((s) => s.userId === Auth.userID).forEach((s) => {
+    streams.filter((s) => s.userId === Auth.userID && s.streamId.startsWith(`${Auth.userID}${TOKEN}${this.tabId}`)).forEach((s) => {
       deviceIds.push(s.deviceId);
     }
     );
@@ -183,7 +185,7 @@ class VideoService {
         logCode: 'video_provider_unsharewebcam',
       }, `Sending unshare all ${Auth.userID} webcams notification to meteor`);
 
-      streams.filter((s) => s.userId === Auth.userID).forEach((s) => sendUserUnshareWebcam(s.stream));
+      streams.filter((s) => s.userId === Auth.userID && s.streamId.startsWith(`${Auth.userID}${TOKEN}${this.tabId}`)).forEach((s) => sendUserUnshareWebcam(s.stream));
       this.exitedVideo();
     }
   }
@@ -197,7 +199,7 @@ class VideoService {
   }
 
   stopVideo(cameraId, sendUserUnshareWebcam, streams) {
-    const _streams = streams.filter((s) => s.userId === Auth.userID);
+    const _streams = streams.filter((s) => s.userId === Auth.userID && s.stream.startsWith(`${Auth.userID}${TOKEN}${this.tabId}`));
 
     const hasTargetStream = _streams.some((s) => s.stream === cameraId);
     const hasOtherStream = _streams.some((s) => s.stream !== cameraId);
@@ -223,7 +225,7 @@ class VideoService {
   }
 
   getSharedDevices(streams) {
-    const devices = streams.filter((vs) => vs.userId === Auth.userID).map((vs) => vs.deviceId);
+    const devices = streams.filter((vs) => vs.userId === Auth.userID && vs.streamId.startsWith(`${Auth.userID}${TOKEN}${this.tabId}`)).map((vs) => vs.deviceId);
 
     return devices;
   }
@@ -570,11 +572,11 @@ class VideoService {
   }
 
   buildStreamName(userId, deviceId) {
-    return `${userId}${TOKEN}${deviceId}`;
+    return `${userId}${TOKEN}${this.tabId}${TOKEN}${deviceId}`;
   }
 
   hasVideoStream(streams) {
-    const videoStreams = streams.find((vs) => vs.userId === Auth.userID);
+    const videoStreams = streams.find((vs) => vs.userId === Auth.userID && vs.streamId.startsWith(`${Auth.userID}${TOKEN}${this.tabId}`));
     return !!videoStreams;
   }
 
@@ -623,10 +625,10 @@ class VideoService {
       ).fetch().map(user => user.userId);
 
       return streams.reduce((result, stream) => {
-        const { userId } = stream;
+        const { userId, streamId } = stream;
 
         const isModerator = moderators.includes(userId);
-        const isMe = Auth.userID === userId;
+        const isMe = Auth.userID === userId && streamId.startsWith(`${Auth.userID}${TOKEN}${this.tabId}`);
 
         if (isModerator || isMe) result.push(stream);
 
@@ -637,7 +639,7 @@ class VideoService {
   }
 
   filterLocalOnly(streams) {
-    return streams.filter(stream => stream.userId === Auth.userID);
+    return streams.filter(stream => stream.userId === Auth.userID && stream.streamId.startsWith(`${Auth.userID}${TOKEN}${this.tabId}`));
   }
 
   disableCam() {
@@ -687,7 +689,7 @@ class VideoService {
   }
 
   getLocalVideoStreamsCount(streams) {
-    const localStreams = streams.filter((vs) => vs.userId === Auth.userID);
+    const localStreams = streams.filter((vs) => vs.userId === Auth.userID && vs.streamId.startsWith(`${Auth.userID}${TOKEN}${this.tabId}`));
 
     return localStreams.length;
   }
@@ -727,7 +729,7 @@ class VideoService {
   }
 
   getMyStreamId(deviceId, streams) {
-    const videoStream = streams.find((vs) => vs.userId === Auth.userID && vs.deviceId === deviceId);
+    const videoStream = streams.find((vs) => vs.userId === Auth.userID && vs.streamId.startsWith(`${Auth.userID}${TOKEN}${this.tabId}`) && vs.deviceId === deviceId);
     return videoStream ? videoStream.stream : null;
   }
 
@@ -747,7 +749,7 @@ class VideoService {
   }
 
   isLocalStream(cameraId) {
-    return cameraId?.startsWith(Auth.userID);
+    return cameraId?.startsWith(`${Auth.userID}${TOKEN}${this.tabId}`);
   }
 
   playStart(cameraId) {
@@ -1040,6 +1042,11 @@ class VideoService {
   updatePeerDictionaryReference(newRef) {
     this.webRtcPeersRef = newRef;
   }
+
+  getTabId() {
+    return this.tabId;
+  }
+
 }
 
 const videoService = new VideoService();
@@ -1105,5 +1112,6 @@ export default {
   isGridEnabled: videoService.isGridEnabled,
   setPageSize: videoService.setPageSize,
   filterLocalOnly: videoService.filterLocalOnly,
-  exitedVideo: () => videoService.exitedVideo()
+  exitedVideo: () => videoService.exitedVideo(),
+  getTabId: () => videoService.getTabId()
 };
