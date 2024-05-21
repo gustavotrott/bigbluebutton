@@ -59,9 +59,24 @@ func HasuraClient(browserConnection *common.BrowserConnection, cookies []*http.C
 	}
 	parsedURL.Scheme = "http"
 	jar.SetCookies(parsedURL, cookies)
-	hc := &http.Client{
-		Jar: jar,
+
+	// Create custom transport to disable gzip compression
+	transport := &http.Transport{
+		Proxy:              http.ProxyFromEnvironment,
+		DisableCompression: true, // Disable HTTP compression
 	}
+
+	// Custom RoundTripper to disable Accept-Encoding header
+	rt := &roundTripper{
+		Transport: transport,
+	}
+
+	// Create HTTP client with the custom transport
+	hc := &http.Client{
+		Jar:       jar,
+		Transport: rt,
+	}
+
 	dialOptions.HTTPClient = hc
 
 	// Create a context for the hasura connection, that depends on the browser context
@@ -118,4 +133,14 @@ func HasuraClient(browserConnection *common.BrowserConnection, cookies []*http.C
 	wg.Wait()
 
 	return nil
+}
+
+// roundTripper is a custom RoundTripper that sets the Accept-Encoding header to an empty value
+type roundTripper struct {
+	Transport http.RoundTripper
+}
+
+func (rt *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Set("Accept-Encoding", "identity")
+	return rt.Transport.RoundTrip(req)
 }
