@@ -27,6 +27,7 @@ object RegisteredUsers {
       0,
       false,
       false,
+      false,
       enforceLayout,
       customParameters,
       loggedOut,
@@ -35,6 +36,10 @@ object RegisteredUsers {
 
   def findWithToken(token: String, users: RegisteredUsers): Option[RegisteredUser] = {
     users.toVector.find(u => u.authToken == token)
+  }
+
+  def findAll(users: RegisteredUsers): Vector[RegisteredUser] = {
+    users.toVector
   }
 
   def findWithUserId(id: String, users: RegisteredUsers): Option[RegisteredUser] = {
@@ -172,6 +177,12 @@ object RegisteredUsers {
     u
   }
 
+  def updateUserConnectedToGraphql(users: RegisteredUsers, user: RegisteredUser, connectedToGraphql: Boolean): RegisteredUser = {
+    val u = user.copy(connectedToGraphql = connectedToGraphql)
+    users.save(u)
+    u
+  }
+
   def setUserLoggedOutFlag(users: RegisteredUsers, user: RegisteredUser): RegisteredUser = {
     val u = user.copy(loggedOut = true)
     users.save(u)
@@ -216,6 +227,7 @@ case class RegisteredUser(
     excludeFromDashboard:     Boolean,
     registeredOn:             Long,
     lastAuthTokenValidatedOn: Long,
+    connectedToGraphql:       Boolean,
     joined:                   Boolean,
     banned:                   Boolean,
     enforceLayout:            String,
