@@ -272,6 +272,7 @@ class MeetingActor(
     //=======================================
     // internal messages
     case msg: MonitorNumberOfUsersInternalMsg     => handleMonitorNumberOfUsers(msg)
+    case msg: MonitorGuestWaitPresenceInternalMsg => handleMonitorGuestWaitPresenceInternalMsg(msg)
     case msg: SetPresenterInDefaultPodInternalMsg => state = presentationPodsApp.handleSetPresenterInDefaultPodInternalMsg(msg, state, liveMeeting, msgBus)
     case msg: UserClosedAllGraphqlConnectionsInternalMsg =>
       state = handleUserClosedAllGraphqlConnectionsInternalMsg(msg, state)
@@ -911,6 +912,68 @@ class MeetingActor(
     processUserInactivityAudit()
     checkIfNeedToEndMeetingWhenNoAuthedUsers(liveMeeting)
     checkIfNeedToEndMeetingWhenNoModerators(liveMeeting)
+  }
+
+  def handleMonitorGuestWaitPresenceInternalMsg(msg: MonitorGuestWaitPresenceInternalMsg) {
+    state = removeUsersWithExpiredUserLeftFlag(liveMeeting, state)
+
+    //    if (!liveMeeting.props.meetingProp.isBreakout) {
+    //      // Track expiry only for non-breakout rooms. The breakout room lifecycle is
+    //      // driven by the parent meeting.
+    //      val (newState, expireReason) = ExpiryTrackerHelper.processMeetingExpiryAudit(outGW, eventBus, liveMeeting, state)
+    //      state = newState
+    //      expireReason foreach (reason => log.info("Meeting {} expired with reason {}", props.meetingProp.intId, reason))
+    //    }
+
+    println("---------------------------------------------------handleMonitorGuestWaitPresenceInternalMsg")
+
+    for {
+      regUser <- RegisteredUsers.findAll(liveMeeting.registeredUsers)
+    } yield {
+
+      if (regUser.connectedToGraphql) {
+        println("USER IS CONNECTED TO GRAPHQL", regUser.name)
+      } else {
+        println("USER IS NOT CONNECTED TO GRAPHQL", regUser.name)
+      }
+
+      println("waitingGuestUsersTimeout: ", liveMeeting.props.usersProp.waitingGuestUsersTimeout)
+
+      if (regUser.guestStatus == GuestStatus.WAIT) {
+        println("WAITING", regUser.name)
+
+        //TODO get waitingGuestUsersTimeout
+
+        //        GuestsWaiting.remove(liveMeeting.guestsWaiting, regUser.id)
+        //        UsersApp.guestWaitingLeft(liveMeeting, regUser.id, outGW)
+
+      } else {
+        println("ALLOWED", regUser.name)
+      }
+    }
+
+    val users = Users2x.findAll(liveMeeting.users2x)
+
+    //    if (state.expiryTracker.endWhenNoModerator &&
+    //      !liveMeeting.props.meetingProp.isBreakout &&
+    //      state.expiryTracker.moderatorHasJoined &&
+    //      state.expiryTracker.lastModeratorLeftOnInMs != 0 &&
+    //      //Check if has moderator with leftFlag
+    //      Users2x.findModerator(liveMeeting.users2x).toVector.length == 0) {
+    //      val hasModeratorLeftRecently = (TimeUtil.timeNowInMs() - state.expiryTracker.endWhenNoModeratorDelayInMs) < state.expiryTracker.lastModeratorLeftOnInMs
+    //      if (!hasModeratorLeftRecently) {
+    //        log.info("Meeting will end due option endWhenNoModerator is enabled and all moderators have left the meeting. meetingId=" + props.meetingProp.intId)
+    //        endAllBreakoutRooms(eventBus, liveMeeting, state, MeetingEndReason.ENDED_DUE_TO_NO_MODERATOR)
+    //        sendEndMeetingDueToExpiry(
+    //          MeetingEndReason.ENDED_DUE_TO_NO_MODERATOR,
+    //          eventBus, outGW, liveMeeting,
+    //          "system"
+    //        )
+    //      } else {
+    //        val msToEndMeeting = state.expiryTracker.lastModeratorLeftOnInMs - (TimeUtil.timeNowInMs() - state.expiryTracker.endWhenNoModeratorDelayInMs)
+    //        log.info("All moderators have left. Meeting will end in " + TimeUtil.millisToSeconds(msToEndMeeting) + " seconds. meetingId=" + props.meetingProp.intId)
+    //      }
+    //    }
   }
 
   def checkVoiceConfUsersStatus(): Unit = {
