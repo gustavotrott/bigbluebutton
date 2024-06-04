@@ -1108,7 +1108,7 @@ public class Meeting {
     	}
 
 		public Builder withWaitingGuestUsersTimeout(long waitingGuestUsersTimeout) {
-			waitingGuestUsersTimeout = waitingGuestUsersTimeout;
+			this.waitingGuestUsersTimeout = waitingGuestUsersTimeout;
 			return this;
 		}
 

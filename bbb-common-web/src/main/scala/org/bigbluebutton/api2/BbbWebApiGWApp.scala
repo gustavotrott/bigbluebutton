@@ -220,7 +220,7 @@ class BbbWebApiGWApp(
       guestPolicy = guestPolicy, meetingLayout = meetingLayout, allowModsToUnmuteUsers = allowModsToUnmuteUsers.booleanValue(),
       allowModsToEjectCameras = allowModsToEjectCameras.booleanValue(),
       authenticatedGuest = authenticatedGuest.booleanValue(),
-      waitingGuestUsersTimeout = waitingGuestUsersTimeout
+      waitingGuestUsersTimeout = waitingGuestUsersTimeout.longValue()
     )
     val metadataProp = MetadataProp(mapAsScalaMap(metadata).toMap)
 
@@ -296,11 +296,6 @@ class BbbWebApiGWApp(
       customParameters = (customParameters).asScala.toMap)
 
     val event = MsgBuilder.buildRegisterUserRequestToAkkaApps(regUser)
-    msgToAkkaAppsEventBus.publish(MsgToAkkaApps(toAkkaAppsChannel, event))
-  }
-
-  def guestWaitingLeft(meetingId: String, intUserId: String): Unit = {
-    val event = MsgBuilder.buildGuestWaitingLeftMsg(meetingId, intUserId)
     msgToAkkaAppsEventBus.publish(MsgToAkkaApps(toAkkaAppsChannel, event))
   }
 

@@ -18,7 +18,7 @@ trait UserEstablishedGraphqlConnectionInternalMsgHdlr extends HandlerHelpers {
     for {
       regUser <- RegisteredUsers.findWithUserId(msg.userId, liveMeeting.registeredUsers)
     } yield {
-      RegisteredUsers.updateUserConnectedToGraphql(liveMeeting.registeredUsers, regUser, connectedToGraphql = true)
+      RegisteredUsers.updateUserConnectedToGraphql(liveMeeting.registeredUsers, regUser, graphqlConnected = true)
     }
 
     Users2x.findWithIntId(liveMeeting.users2x, msg.userId) match {

@@ -124,7 +124,6 @@ class GraphqlConnectionsActor(
   }
 
   private def handleUserGraphqlConnectionClosedSysMsg(msg: UserGraphqlConnectionClosedSysMsg): Unit = {
-    println("handleUserGraphqlConnectionClosedSysMsg")
     handleUserGraphqlConnectionClosed(msg.body.sessionToken, msg.body.middlewareUID, msg.body.browserConnectionId)
   }
 

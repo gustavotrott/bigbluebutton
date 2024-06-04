@@ -76,6 +76,8 @@ func main() {
 
 		common.ActivitiesOverviewStarted("__WebsocketConnection")
 		defer common.ActivitiesOverviewCompleted("__WebsocketConnection")
+		defer log.Info("Connection finished")
+		log.Info("Connection started")
 
 		if err := rateLimiter.Wait(ctx); err != nil {
 			if !errors.Is(err, context.Canceled) {

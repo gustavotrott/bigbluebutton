@@ -83,7 +83,7 @@ public class ParamsProcessorUtil {
     private String defaultAvatarURL;
     private String defaultGuestPolicy;
     private Boolean authenticatedGuest;
-    private long waitingGuestUsersTimeout;
+    private Long waitingGuestUsersTimeout;
     private String defaultMeetingLayout;
     private int defaultMeetingDuration;
     private boolean disableRecordingDefault;
@@ -1314,7 +1314,7 @@ public class ParamsProcessorUtil {
 		this.authenticatedGuest = value;
 	}
 
-    public void setWaitingGuestUsersTimeout(long value) {
+    public void setWaitingGuestUsersTimeout(Long value) {
         this.waitingGuestUsersTimeout = value;
     }
 

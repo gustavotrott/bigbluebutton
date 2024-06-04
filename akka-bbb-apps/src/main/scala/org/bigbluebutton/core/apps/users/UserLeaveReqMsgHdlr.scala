@@ -22,7 +22,7 @@ trait UserLeaveReqMsgHdlr extends HandlerHelpers {
     for {
       regUser <- RegisteredUsers.findWithUserId(msg.userId, liveMeeting.registeredUsers)
     } yield {
-      RegisteredUsers.updateUserConnectedToGraphql(liveMeeting.registeredUsers, regUser, connectedToGraphql = false)
+      RegisteredUsers.updateUserConnectedToGraphql(liveMeeting.registeredUsers, regUser, graphqlConnected = false)
     }
 
     handleUserLeaveReq(msg.userId, liveMeeting.props.meetingProp.intId, loggedOut = false, state)

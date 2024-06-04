@@ -89,6 +89,7 @@ func ConnectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Log it
 	log.Infof("connection accepted")
+	defer log.Infof("connection removed")
 
 	// Create channels
 	fromBrowserToHasuraConnectionEstablishingChannel := common.NewSafeChannel(bufferSize)
@@ -98,7 +99,7 @@ func ConnectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Configure the wait group (to hold this routine execution until both are completed)
 	var wgAll sync.WaitGroup
-	wgAll.Add(3)
+	wgAll.Add(2)
 
 	// Other wait group to close this connection once Browser Reader dies
 	var wgReader sync.WaitGroup
