@@ -25,6 +25,12 @@ interface Response {
   }
 }
 
+let queryCount = 0;
+const getCurrQueryId = () => {
+  queryCount += 1;
+  return queryCount.toString();
+};
+
 const DEFAULT_MAX_MUTATION_PAYLOAD_SIZE = 10485760; // 10MB
 const getMaxMutationPayloadSize = () => window.meetingClientSettings?.public?.app?.maxMutationPayloadSize
   ?? DEFAULT_MAX_MUTATION_PAYLOAD_SIZE;
@@ -124,6 +130,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ children }): Reac
       try {
         const subscription = createClient({
           url: graphqlUrl,
+          generateID: getCurrQueryId,
           retryAttempts: numberOfAttempts.current,
           keepAlive: 10_000,
           retryWait: async () => {
