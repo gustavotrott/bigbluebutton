@@ -1,12 +1,13 @@
 #!/bin/bash
+set -e
 
 cd "$(dirname "$0")"
 
 export LANGUAGE="en_US.UTF-8"
 export LC_ALL="en_US.UTF-8"
 
-akka_apps_status=$(sudo systemctl is-active "bbb-apps-akka")
-hasura_status=$(sudo systemctl is-active "bbb-graphql-server")
+akka_apps_status=$(sudo systemctl is-active "bbb-apps-akka" || true)
+hasura_status=$(sudo systemctl is-active "bbb-graphql-server" || true)
 
 if [ "$akka_apps_status" = "active" ]; then
   echo "Stopping Akka-apps"
