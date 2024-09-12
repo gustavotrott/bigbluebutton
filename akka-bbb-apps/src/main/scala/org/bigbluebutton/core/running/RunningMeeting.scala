@@ -37,7 +37,10 @@ class RunningMeeting(val props: DefaultProps, outGW: OutMessageGateway,
   private val deskshareModel = new ScreenshareModel
   private val audioCaptions = new AudioCaptions
   private val timerModel = new TimerModel
-  val clientSettings: Map[String, Object] = ClientSettings.getClientSettingsWithOverride(props.overrideClientSettings)
+  val clientSettings: Map[String, Object] = ClientSettings.getClientSettingsWithoutDisabledPlugins(
+    ClientSettings.getClientSettingsWithOverride(props.overrideClientSettings),
+    props.meetingProp.disabledFeatures
+  )
 
   // meetingModel.setGuestPolicy(props.usersProp.guestPolicy)
 

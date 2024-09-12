@@ -55,6 +55,33 @@ object ClientSettings extends SystemConfiguration {
     } else clientSettingsFromFile
   }
 
+  def getClientSettingsWithoutDisabledPlugins(clientSettings: Map[String, Object], disabledFeatures: Vector[String]): Map[String, Object] = {
+
+    val pluginsToDisable = disabledFeatures.filter(featToDisable => featToDisable.startsWith("plugin-"))
+    if (pluginsToDisable.nonEmpty) {
+      clientSettings.get("public") match {
+        case Some(settingsPublic: Map[String, Any]) => {
+          settingsPublic.get("plugins") match {
+            case Some(settingsPlugins: List[Map[String, Any]]) => {
+              val enabledPlugins = settingsPlugins.filter((plugin: Map[String, Any]) => {
+                if (pluginsToDisable.contains("plugin-" + plugin.getOrElse("name", ""))) {
+                  false
+                } else {
+                  true
+                }
+              })
+              clientSettings + ("public" -> (settingsPublic + ("plugins" -> enabledPlugins)))
+            }
+            case _ => clientSettings
+          }
+        }
+        case _ => clientSettings
+      }
+    } else {
+      clientSettings
+    }
+  }
+
   def getConfigPropertyValueByPathAsIntOrElse(map: Map[String, Any], path: String, alternativeValue: Int): Int = {
     getConfigPropertyValueByPath(map, path) match {
       case Some(configValue: Int) => configValue
