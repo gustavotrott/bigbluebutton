@@ -189,7 +189,7 @@ class MultiUsers {
     await this.userPage.shareWebcam();
     await this.modPage.page.waitForFunction(
       checkElementLengthEqualTo,
-      [e.webcamVideoItem, 3],
+      [e.webcamContainer, 2],
       { timeout: ELEMENT_WAIT_TIME },
     );
     // Pin first webcam (Mod2)
