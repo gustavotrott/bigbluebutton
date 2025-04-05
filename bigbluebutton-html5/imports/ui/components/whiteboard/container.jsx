@@ -63,8 +63,9 @@ const WhiteboardContainer = (props) => {
   const layoutContextDispatch = layoutDispatch();
 
   const [editor, setEditor] = useState(null);
-  const [shapes, setShapes] = useState([]);
-  const [removedShapes, setRemovedShapes] = useState([]);
+  const [initialShapes, setInitialShapes] = useState([]);
+  const shapesToProcessQueueRef = useRef([]);
+  const shapesToRemoveQueueRef = useRef([]);
   const [isTabVisible, setIsTabVisible] = useState(document.visibilityState === 'visible');
   const [currentPresentationPage, setCurrentPresentationPage] = useState(null);
   const [initialPageAnnotationsReady, setInitialPageAnnotationsReady] = useState(false);
@@ -276,7 +277,6 @@ const WhiteboardContainer = (props) => {
 
       const processedAnnotationIds = new Set();
       const validShapes = [];
-      const annotationsToBeRemoved = new Set();
 
       for (let i = annotationStream.length - 1; i >= 0; i -= 1) {
         const annotation = annotationStream[i];
@@ -287,40 +287,36 @@ const WhiteboardContainer = (props) => {
           processedAnnotationIds.add(annotationId);
 
           if (!annotationInfo) {
-            annotationsToBeRemoved.add(annotationId);
+            shapesToRemoveQueueRef.current.push(annotationId);
           } else {
             validShapes.push({ ...annotationInfo, id: annotationId });
           }
         }
       }
 
-      setShapes(() => {
-        if (validShapes.length > 0) {
-          const restoreOnUpdate = getFromUserSettings(
-            FORCE_RESTORE_PRESENTATION_ON_NEW_EVENTS,
-            window.meetingClientSettings.public.presentation.restoreOnUpdate,
-          );
+      if (validShapes.length > 0) {
+        const restoreOnUpdate = getFromUserSettings(
+          FORCE_RESTORE_PRESENTATION_ON_NEW_EVENTS,
+          window.meetingClientSettings.public.presentation.restoreOnUpdate,
+        );
 
-          if (restoreOnUpdate) {
-            MediaService.setPresentationIsOpen(layoutContextDispatch, true);
-          }
+        if (restoreOnUpdate) {
+          MediaService.setPresentationIsOpen(layoutContextDispatch, true);
         }
+      }
 
-        return validShapes.length > 0 ? validShapes : [];
-      });
-
-      setRemovedShapes(Array.from(annotationsToBeRemoved || []));
+      shapesToProcessQueueRef.current.push(validShapes.length > 0 ? validShapes : []);
     },
   });
 
   const processAnnotations = (data) => {
-    let annotationsToBeRemoved = [];
+    let annotationsToRemove = [];
     const newAnnotations = [];
     const updatedAnnotations = [];
 
     data.forEach((item) => {
       if (!item.annotationInfo) {
-        annotationsToBeRemoved.push(item.annotationId);
+        annotationsToRemove.push(item.annotationId);
       } else {
         const annotationInfoParsed = JSON.parse(item.annotationInfo);
         const existingShape = editor?.getShape(item.annotationId);
@@ -330,7 +326,7 @@ const WhiteboardContainer = (props) => {
             annotationInfo: annotationInfoParsed,
           });
 
-          annotationsToBeRemoved = annotationsToBeRemoved.filter(
+          annotationsToRemove = annotationsToRemove.filter(
             (id) => id !== item.annotationId,
           );
         } else {
@@ -342,7 +338,7 @@ const WhiteboardContainer = (props) => {
       }
     });
 
-    setShapes(() => [
+    setInitialShapes(() => [
       ...updatedAnnotations.map(({ annotationInfo, annotationId }) => ({
         ...annotationInfo,
         id: annotationId,
@@ -364,7 +360,7 @@ const WhiteboardContainer = (props) => {
       }
     }
 
-    setRemovedShapes(annotationsToBeRemoved.length > 0 ? annotationsToBeRemoved : []);
+    shapesToRemoveQueueRef.current = annotationsToRemove.length > 0 ? annotationsToRemove : [];
   };
 
   useEffect(() => {
@@ -375,8 +371,9 @@ const WhiteboardContainer = (props) => {
 
   useEffect(() => {
     if (!curPageId || initialPageAnnotationsLoading) {
-      setShapes([]);
-      setRemovedShapes([]);
+      setInitialShapes([]);
+      shapesToProcessQueueRef.current.push([]);
+      shapesToRemoveQueueRef.current.push([]);
     }
   }, [curPageId, initialPageAnnotationsLoading]);
 
@@ -464,8 +461,9 @@ const WhiteboardContainer = (props) => {
           initDefaultPages,
           persistShapeWrapper,
           isMultiUserActive,
-          shapes,
-          removedShapes,
+          initialShapes,
+          shapesToProcessQueueRef,
+          shapesToRemoveQueueRef,
           bgShape,
           assets,
           removeShapes,
