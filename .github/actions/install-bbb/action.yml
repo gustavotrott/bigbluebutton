@@ -23,7 +23,6 @@ runs:
       uses: actions/download-artifact@v4
       with:
         name: artifacts_bbb-libreoffice
-        path: bbb-libreoffice.tar
     - name: Load
       shell: bash
       run: |
