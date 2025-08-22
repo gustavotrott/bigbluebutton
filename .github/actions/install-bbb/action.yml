@@ -22,7 +22,7 @@ runs:
     - name: Download bbb-libreoffice artifact
       uses: actions/download-artifact@v4
       with:
-        name: artifacts_bbb-libreoffice
+        name: bbb-libreoffice-image-cache
     - name: Load
       shell: bash
       run: |

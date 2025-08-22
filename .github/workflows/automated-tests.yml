@@ -142,7 +142,7 @@ jobs:
       - name: Archive packages
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts_bbb-libreoffice
+          name: bbb-libreoffice-image-cache
           path: bbb-libreoffice.tar
   unify-artifacts:
     needs: build-package
