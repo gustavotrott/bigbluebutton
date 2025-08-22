@@ -19,6 +19,19 @@ runs:
         echo "----ls artifacts/----"
         ls artifacts/
         echo "Done"
+    - name: Download bbb-libreoffice artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: artifacts_bbb-libreoffice
+        path: bbb-libreoffice.tar
+    - name: Load
+      shell: bash
+      run: |
+        set -e
+        echo "----ls artifacts/----"
+        ls bbb-libreoffice.tar
+        docker load -i bbb-libreoffice.tar
+        echo "bbb-libreoffice loaded"
     - name: Generate CA
       shell: bash
       run: |
