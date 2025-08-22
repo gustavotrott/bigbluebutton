@@ -120,22 +120,25 @@ jobs:
         with:
           name: artifacts_${{ matrix.package }}
           path: artifacts/
-  cache-bbb-libreoffice:
+  bbb-libreoffice-image:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+      - name: Set cache-key vars
+        run: |
+          echo "BBB_LIBREOFFICE_IMAGE_NAME=$(head -n 1 bbb-libreoffice/docker/Dockerfile | cut -d ' ' -f 2)" >> $GITHUB_ENV
       - name: Restore base image cache
         id: cache
         uses: actions/cache@v4
         with:
           path: bbb-libreoffice.tar
-          key: bbb-libreoffice:25.2.4-20250619-132800
+          key: ${{ env.BBB_LIBREOFFICE_IMAGE_NAME }}
       - name: Pull (first time / cache miss)
         if: steps.cache.outputs.cache-hit != 'true'
-        run: docker pull docker.io/bigbluebutton/bbb-libreoffice:25.2.4-20250619-132800
+        run: docker pull docker.io/${{ env.BBB_LIBREOFFICE_IMAGE_NAME }}
       - name: Save image to cache (first time)
         if: steps.cache.outputs.cache-hit != 'true'
-        run: docker save docker.io/bigbluebutton/bbb-libreoffice:25.2.4-20250619-132800 -o bbb-libreoffice.tar
+        run: docker save docker.io/${{ env.BBB_LIBREOFFICE_IMAGE_NAME }} -o bbb-libreoffice.tar
       - name: Archive packages
         uses: actions/upload-artifact@v4
         with:
@@ -240,7 +243,9 @@ jobs:
             artifacts_others
           failOnError: false
   install-and-run-bbb-tests:
-    needs: unify-artifacts
+    needs:
+      - unify-artifacts
+      - bbb-libreoffice-image
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -316,7 +321,9 @@ jobs:
           name: bbb-logs-${{ env.MATRIX_SHARD_UNDERSCORED }}
           path: ./bbb-logs.tar.gz
   install-and-run-plugin-tests:
-    needs: unify-artifacts
+    needs:
+      - unify-artifacts
+      - bbb-libreoffice-image
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
