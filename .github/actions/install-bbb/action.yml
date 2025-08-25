@@ -12,7 +12,7 @@ runs:
       run: |
         sudo LC_CTYPE=C.UTF-8 add-apt-repository -y ppa:rmescandon/yq
         sudo LC_CTYPE=C.UTF-8 add-apt-repository -y ppa:bigbluebutton/support
-        sudo LC_CTYPE=C.UTF-8 ppa:martin-uni-mainz/coturn
+        sudo LC_CTYPE=C.UTF-8 add-apt-repository -y ppa:martin-uni-mainz/coturn
         sudo apt update
     - name: Download all BBB dependencies from cache
       uses: Eeems-Org/apt-cache-action@v1
@@ -29,16 +29,30 @@ runs:
         set -e
         echo "----ls artifacts/----"
         ls artifacts/
-        echo "Done"
-    - name: Download bbb-libreoffice artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: bbb-libreoffice-image-cache
-    - name: Load bbb-libreoffice image
+    #     echo "Done"
+    # - name: Download bbb-libreoffice artifact
+    #   uses: actions/download-artifact@v4
+    #   with:
+    #     name: bbb-libreoffice-image-cache
+    # - name: Load bbb-libreoffice image
+    #   shell: bash
+    #   run: |
+    #     set -e
+    #     docker load -i bbb-libreoffice.tar
+    - name: Set libreoffice cache-key vars
       shell: bash
       run: |
-        set -e
-        docker load -i bbb-libreoffice.tar
+        echo "BBB_LIBREOFFICE_IMAGE_NAME=$(head -n 1 bbb-libreoffice/docker/Dockerfile | cut -d ' ' -f 2)" >> $GITHUB_ENV
+    - name: Restore base image cache
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: bbb-libreoffice.tar
+        key: ${{ env.BBB_LIBREOFFICE_IMAGE_NAME }}
+    - name: Load docker image from bbb-libreoffice.tar
+      shell: bash
+      if: steps.cache.outputs.cache-hit = 'true'
+      run: docker load -i bbb-libreoffice.tar
     - name: Generate CA
       shell: bash
       run: |
