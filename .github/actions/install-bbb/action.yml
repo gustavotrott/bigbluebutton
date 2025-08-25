@@ -51,7 +51,7 @@ runs:
         key: ${{ env.BBB_LIBREOFFICE_IMAGE_NAME }}
     - name: Load docker image from bbb-libreoffice.tar
       shell: bash
-      if: steps.cache.outputs.cache-hit = 'true'
+      if: steps.cache.outputs.cache-hit == 'true'
       run: docker load -i bbb-libreoffice.tar
     - name: Generate CA
       shell: bash
