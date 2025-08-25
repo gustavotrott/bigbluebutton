@@ -257,6 +257,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install BBB
+        timeout-minutes: 25
         uses: ./.github/actions/install-bbb
       - name: Install test dependencies
         working-directory: ./bigbluebutton-tests/playwright
