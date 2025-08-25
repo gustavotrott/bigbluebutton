@@ -7,6 +7,10 @@ runs:
       uses: ./.github/actions/merge-branches
     - run: ./build/get_external_dependencies.sh
       shell: bash
+    - name: Apt update
+      shell: bash
+      run: |
+        sudo apt update
     - name: Download all BBB dependencies from cache
       uses: Eeems-Org/apt-cache-action@v1
       with:
