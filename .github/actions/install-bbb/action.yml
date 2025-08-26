@@ -22,6 +22,12 @@ runs:
       shell: bash
       run: |
         echo "BBB_LIBREOFFICE_IMAGE_NAME=$(head -n 1 bbb-libreoffice/docker/Dockerfile | cut -d ' ' -f 2)" >> $GITHUB_ENV
+    - name: Preparar diretório do APT e permissões
+      shell: bash
+      run: |
+        sudo mkdir -p /var/cache/apt/archives/partial
+        sudo chown -R "$USER":"$USER" /var/cache/apt
+        sudo chmod -R u+rwX /var/cache/apt
     - name: Restore bbb-libreoffice.tar from cache
       id: cache
       uses: actions/cache@v4
@@ -32,6 +38,17 @@ runs:
       shell: bash
       if: steps.cache.outputs.cache-hit == 'true'
       run: docker load -i bbb-libreoffice.tar
+    - name: Restore APT cache (if exists)
+      uses: actions/cache/restore@v4
+      with:
+        path: /var/cache/apt/archives
+        key: ${{ runner.os }}-apt-${{ hashFiles('bigbluebutton-config/bigbluebutton-release') }}
+    - name: Apt manifest start
+      shell: bash
+      run: |
+        find /var/cache/apt/archives -type f -name '*.deb' -print0 \
+          | sort -z \
+          | xargs -0 -r sha256sum > apt-manifest-start.txt
     - name: Generate CA
       shell: bash
       run: |
@@ -175,3 +192,29 @@ runs:
         sudo -i <<EOF
         timeout 60 systemctl --type=service --state=running,exited,failed --all --no-pager --no-legend
         EOF
+    - name: Apt manifest end
+      shell: bash
+      run: |
+        echo "ls /var/cache/apt/archives---------------------"
+        ls /var/cache/apt/archives
+        find /var/cache/apt/archives -type f -name '*.deb' -print0 \
+          | sort -z \
+          | xargs -0 -r sha256sum > apt-manifest-end.txt
+    - name: Detect changes on APT manifest
+      shell: bash
+      run: |
+        if [ ! -s apt-manifest-start.txt ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        if diff -u apt-manifest-start.txt apt-manifest-end.txt >/dev/null; then
+          echo "changed=false" >> $GITHUB_OUTPUT
+        else
+          echo "changed=true" >> $GITHUB_OUTPUT
+        fi
+    - name: Upload new APT cache (if changed)
+      if: steps.diff.outputs.changed == 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: /var/cache/apt/archives
+        key: ${{ runner.os }}-apt-${{ hashFiles('bigbluebutton-config/bigbluebutton-release') }}
