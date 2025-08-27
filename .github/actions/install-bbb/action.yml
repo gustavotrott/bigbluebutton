@@ -197,6 +197,8 @@ runs:
       run: |
         set -ex
         pwd
+        sudo chown -R "$USER:$USER" /var/cache/apt/archives || true
+        sudo chmod 755 /var/cache/apt/archives /var/cache/apt/archives/partial 2>/dev/null || true
         echo "ls /var/cache/apt/archives---------------------"
         ls /var/cache/apt/archives
         find /var/cache/apt/archives -type f -name '*.deb' -print0 \
