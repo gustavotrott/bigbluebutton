@@ -452,7 +452,8 @@ jobs:
         with:
           name: bbb-logs-plugins
           path: ./bbb-logs.tar.gz
-      - name: Apt manifest end
+      - if: success()
+        name: Apt manifest end
         shell: bash
         run: |
           set -ex
@@ -475,7 +476,7 @@ jobs:
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
       - name: Upload new APT cache (if changed)
-        if: steps.diff.outputs.changed == 'true'
+        if: success() && steps.diff.outputs.changed == 'true'
         uses: actions/cache/save@v4
         with:
           path: /var/cache/apt/archives
