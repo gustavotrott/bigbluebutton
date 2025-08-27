@@ -257,11 +257,11 @@ jobs:
         timeout-minutes: 60
         uses: ./.github/actions/install-bbb
       - uses: actions/setup-node@v4
-        name: NODE CACHE - Restore Playright node modules from cache
+        name: PLAYRIGHT CACHE - Restore Playright node modules from cache
         with:
           cache: 'npm'
           cache-dependency-path: bigbluebutton-tests/playwright/package-lock.json
-      - name: NODE CACHE - Restore Playright binaries from cache
+      - name: PLAYRIGHT CACHE - Restore Playright binaries from cache
         id: cache
         uses: actions/cache@v4
         with:
@@ -331,7 +331,7 @@ jobs:
           path: ./bbb-logs.tar.gz
       - name: APT CACHE - Check for changes using packages hash
         if: success() && matrix.shard == 1
-        id: apt-diff
+        id: apt-manifest
         shell: bash
         run: |
           sudo chown -R "$USER:$USER" /var/cache/apt/archives || true
@@ -339,21 +339,13 @@ jobs:
           find /var/cache/apt/archives -type f -name '*.deb' -print0 \
             | sort -z \
             | xargs -0 -r sha256sum > apt-manifest-end.txt
-          if [ ! -s apt-manifest-start.txt ]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          if diff -u apt-manifest-start.txt apt-manifest-end.txt >/dev/null; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-          fi
+          echo "hash=$(sha256sum apt-manifest-end.txt | cut -d' ' -f1)" >> $GITHUB_OUTPUT
       - name: APT CACHE - Upload new packages (if changed)
-        if: success() && matrix.shard == 1 && steps.apt-diff.outputs.changed == 'true'
+        if: success() && matrix.shard == 1
         uses: actions/cache/save@v4
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-${{ hashFiles('bigbluebutton-config/bigbluebutton-release') }}
+          key: ${{ runner.os }}-apt-${{ hashFiles('bigbluebutton-config/bigbluebutton-release') }}-${{ steps.apt-manifest.outputs.hash }}
   install-and-run-plugin-tests:
     needs:
       - unify-artifacts
@@ -384,14 +376,14 @@ jobs:
           wget -O bigbluebutton-html-plugin-sdk.tar.gz $SDK_URL
           mkdir -p bigbluebutton-html-plugin-sdk
           tar -xzf bigbluebutton-html-plugin-sdk.tar.gz -C bigbluebutton-html-plugin-sdk --strip-components=1
-      - name: NODE CACHE (Plugins SDK) - Restore Playright node modules from cache
+      - name: PLAYRIGHT CACHE (Plugins SDK) - Restore Playright node modules from cache
         uses: actions/setup-node@v4
         with:
           cache: 'npm'
           cache-dependency-path: |
                 bigbluebutton-tests/bigbluebutton-html-plugin-sdk/package-lock.json
                 bigbluebutton-tests/bigbluebutton-html-plugin-sdk/samples/**/package-lock.json
-      - name: NODE CACHE - Restore Playright binaries from cache
+      - name: PLAYRIGHT CACHE - Restore Playright binaries from cache
         id: cache
         uses: actions/cache@v4
         with:
