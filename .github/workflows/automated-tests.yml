@@ -53,6 +53,7 @@ jobs:
             cache-files-list: bbb-learning-dashboard
           - package: bbb-playback-record
             build-list: bbb-playback bbb-playback-notes bbb-playback-podcast bbb-playback-presentation bbb-playback-screenshare bbb-playback-video bbb-record-core
+            cache-files-list: bbb-playback.placeholder.sh bbb-presentation-video.placeholder.sh record-and-playback
           - package: bbb-graphql-server
             build-name: bbb-graphql-server
             build-list: bbb-graphql-server bbb-graphql-middleware bbb-graphql-actions
@@ -76,6 +77,7 @@ jobs:
             cache-files-list: bbb-webrtc-sfu.placeholder.sh bbb-webrtc-recorder.placeholder.sh
           - package: others
             build-list: bbb-mkclean bbb-pads bbb-libreoffice-docker bbb-transcription-controller bigbluebutton bbb-livekit
+            cache-files-list: bbb-pads.placeholder.sh bbb-libreoffice bbb-transcription-controller.placeholder.sh
     steps:
       - uses: actions/checkout@v4
       - name: Merge branches
@@ -125,7 +127,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Set cache-key vars
+      - name: LIBREOFFICE CACHE - Set cache-key vars
         run: |
           echo "BBB_LIBREOFFICE_IMAGE_NAME=$(head -n 1 bbb-libreoffice/docker/Dockerfile | cut -d ' ' -f 2)" >> $GITHUB_ENV
       - name: LIBREOFFICE CACHE - Restore docker image from cache
@@ -254,8 +256,17 @@ jobs:
       - name: Install BBB
         timeout-minutes: 60
         uses: ./.github/actions/install-bbb
+      - uses: actions/setup-node@v4
+        name: NODE CACHE - Restore Playright node modules from cache
         with:
-          caller_job: ${{ github.job }}
+          cache: 'npm'
+          cache-dependency-path: bigbluebutton-tests/playwright/package-lock.json
+      - name: NODE CACHE - Restore Playright binaries from cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/ms-playwright/
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bigbluebutton-html-plugin-sdk/package-lock.json') }}
       - name: Install test dependencies
         working-directory: ./bigbluebutton-tests/playwright
         timeout-minutes: 25
@@ -354,6 +365,9 @@ jobs:
       SAMPLES_WITH_TESTS: "sample-action-button-dropdown-plugin sample-actions-bar-plugin sample-audio-settings-dropdown-plugin sample-camera-settings-dropdown-plugin sample-custom-subscription-hook sample-data-channel-plugin"
     steps:
       - uses: actions/checkout@v4
+      - name: Install BBB
+        timeout-minutes: 60
+        uses: ./.github/actions/install-bbb
       - name: Extract download URL of the SDK version information from bigbluebutton-html5/package.json
         working-directory: ./bigbluebutton-html5
         run: |
@@ -370,11 +384,19 @@ jobs:
           wget -O bigbluebutton-html-plugin-sdk.tar.gz $SDK_URL
           mkdir -p bigbluebutton-html-plugin-sdk
           tar -xzf bigbluebutton-html-plugin-sdk.tar.gz -C bigbluebutton-html-plugin-sdk --strip-components=1
-      - name: Install BBB
-        timeout-minutes: 60
-        uses: ./.github/actions/install-bbb
+      - name: NODE CACHE (Plugins SDK) - Restore Playright node modules from cache
+        uses: actions/setup-node@v4
         with:
-          caller_job: ${{ github.job }}
+          cache: 'npm'
+          cache-dependency-path: |
+                bigbluebutton-tests/bigbluebutton-html-plugin-sdk/package-lock.json
+                bigbluebutton-tests/bigbluebutton-html-plugin-sdk/samples/**/package-lock.json
+      - name: NODE CACHE - Restore Playright binaries from cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/ms-playwright/
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bigbluebutton-html-plugin-sdk/package-lock.json') }}
       - name: Plugins SDK - Install node dependencies
         working-directory: ./bigbluebutton-tests/bigbluebutton-html-plugin-sdk
         run: |

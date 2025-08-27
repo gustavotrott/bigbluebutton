@@ -1,11 +1,5 @@
 name: "Install BBB"
 description: "Install BigBlueButton"
-on:
-  workflow_call:
-    inputs:
-      caller_job:
-        required: true
-        type: string
 runs:
   using: "composite"
   steps:
@@ -55,26 +49,6 @@ runs:
         find /var/cache/apt/archives -type f -name '*.deb' -print0 \
           | sort -z \
           | xargs -0 -r sha256sum > apt-manifest-start.txt
-    - if: inputs.caller_job == 'install-and-run-bbb-tests'
-      uses: actions/setup-node@v4
-      name: NODE CACHE - Restore Playright node modules from cache
-      with:
-        cache: 'npm'
-        cache-dependency-path: bigbluebutton-tests/playwright/package-lock.json
-    - if: inputs.caller_job == 'install-and-run-plugin-tests'
-      name: NODE CACHE (Plugins SDK) - Restore Playright node modules from cache
-      uses: actions/setup-node@v4
-      with:
-        cache: 'npm'
-        cache-dependency-path: |
-              bigbluebutton-tests/bigbluebutton-html-plugin-sdk/package-lock.json
-              bigbluebutton-tests/bigbluebutton-html-plugin-sdk/samples/**/package-lock.json
-    - name: NODE CACHE - Restore Playright binaries from cache
-      id: cache
-      uses: actions/cache@v4
-      with:
-        path: /home/runner/.cache/ms-playwright/
-        key: ${{ runner.os }}-playwright-${{ hashFiles('bigbluebutton-html-plugin-sdk/package-lock.json') }}
     - name: Generate CA
       shell: bash
       run: |
