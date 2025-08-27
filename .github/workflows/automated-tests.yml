@@ -125,12 +125,15 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+      - name: Set cache-key vars
+        run: |
+          echo "BBB_LIBREOFFICE_IMAGE_NAME=$(head -n 1 bbb-libreoffice/docker/Dockerfile | cut -d ' ' -f 2)" >> $GITHUB_ENV
       - name: LIBREOFFICE CACHE - Restore docker image from cache
         id: libreoffice-cache
         uses: actions/cache@v4
         with:
           path: bbb-libreoffice.tar
-          key: ${{ runner.os }}-libreoffice-${{ hashFiles('bbb-libreoffice/docker/Dockerfile') }}
+          key: ${{ env.BBB_LIBREOFFICE_IMAGE_NAME }}
       - name: LIBREOFFICE CACHE - Pull and save docker image (first time / cache miss)
         if: steps.libreoffice-cache.outputs.cache-hit != 'true'
         run: |

@@ -29,7 +29,7 @@ runs:
       uses: actions/cache@v4
       with:
         path: bbb-libreoffice.tar
-        key: ${{ runner.os }}-libreoffice-${{ hashFiles('bbb-libreoffice/docker/Dockerfile') }}
+        key: ${{ env.BBB_LIBREOFFICE_IMAGE_NAME }}
     - name: LIBREOFFICE CACHE - Load docker image from bbb-libreoffice.tar
       shell: bash
       if: steps.libreoffice-cache.outputs.cache-hit == 'true'
