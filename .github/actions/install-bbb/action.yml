@@ -24,6 +24,10 @@ runs:
         set -e
         echo "----ls artifacts/----"
         ls artifacts/
+    - name: LIBREOFFICE CACHE - Set cache-key vars
+      shell: bash
+      run: |
+        echo "BBB_LIBREOFFICE_IMAGE_NAME=$(head -n 1 bbb-libreoffice/docker/Dockerfile | cut -d ' ' -f 2)" >> $GITHUB_ENV
     - name: LIBREOFFICE CACHE - Restore bbb-libreoffice.tar from cache
       id: libreoffice-cache
       uses: actions/cache@v4
