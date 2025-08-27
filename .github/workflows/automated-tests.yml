@@ -452,6 +452,34 @@ jobs:
         with:
           name: bbb-logs-plugins
           path: ./bbb-logs.tar.gz
+      - name: Apt manifest end
+        shell: bash
+        run: |
+          set -ex
+          pwd
+          sudo chown -R "$USER:$USER" /var/cache/apt/archives || true
+          sudo chmod 755 /var/cache/apt/archives /var/cache/apt/archives/partial 2>/dev/null || true
+          echo "ls /var/cache/apt/archives---------------------"
+          ls /var/cache/apt/archives
+          find /var/cache/apt/archives -type f -name '*.deb' -print0 \
+            | sort -z \
+            | xargs -0 -r sha256sum > apt-manifest-end.txt
+          if [ ! -s apt-manifest-start.txt ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo 2
+          if diff -u apt-manifest-start.txt apt-manifest-end.txt >/dev/null; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Upload new APT cache (if changed)
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-${{ hashFiles('bigbluebutton-config/bigbluebutton-release') }}
   upload-report:
     if: always() && !contains(github.event.head_commit.message, 'Merge pull request')
     needs:
