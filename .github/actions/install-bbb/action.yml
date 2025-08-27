@@ -6,8 +6,8 @@ runs:
     - name: Git config - disable warnings
       shell: bash
       run: |
-        git config set advice.defaultBranchName false
-        git config set advice.detachedHead false
+        git config --global set advice.defaultBranchName false
+        git config --global set advice.detachedHead false
     - name: Merge branches
       uses: ./.github/actions/merge-branches
     - run: ./build/get_external_dependencies.sh
@@ -47,9 +47,9 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: /var/cache/apt/archives
-        key: ${{ runner.os }}-apt-${{ hashFiles('bigbluebutton-config/bigbluebutton-release') }}-
+        key: ${{ runner.os }}-apt-${{ hashFiles('bigbluebutton-config/bigbluebutton-release') }}
         restore-keys: |
-              ${{ runner.os }}-apt-${{ hashFiles('bigbluebutton-config/bigbluebutton-release') }}-
+              ${{ runner.os }}-apt-${{ hashFiles('bigbluebutton-config/bigbluebutton-release') }}
     - name: Generate CA
       shell: bash
       run: |
