@@ -2,9 +2,15 @@ name: Merge branches
 runs:
   using: composite
   steps:
-    - name: Checkout PR merge ref
+    - name: Checkout the result of merging the PR's source branch into its target branch
+      if: github.event_name == 'pull_request'
       uses: actions/checkout@v4
       with:
         ref: refs/pull/${{ github.event.number }}/merge
-        fetch-depth: 1 # shallow
-        fetch-tags: false
+
+    - name: Checkout commit/branch
+      if: github.event_name != 'pull_request'
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.ref }}
+        fetch-depth: 1
