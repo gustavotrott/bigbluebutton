@@ -2,7 +2,7 @@ name: Merge branches
 runs:
   using: composite
   steps:
-    - name: Checkout the result of merging the PR's source branch into its target branch
+    - name: Checkout PR's source merged into its target branch
       if: github.event_name == 'pull_request'
       uses: actions/checkout@v4
       with:
@@ -13,4 +13,3 @@ runs:
       uses: actions/checkout@v4
       with:
         ref: ${{ github.ref }}
-        fetch-depth: 1

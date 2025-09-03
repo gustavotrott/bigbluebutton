@@ -79,8 +79,16 @@ jobs:
             build-list: bbb-mkclean bbb-pads bbb-libreoffice-docker bbb-transcription-controller bigbluebutton bbb-livekit
             cache-files-list: bbb-pads.placeholder.sh bbb-libreoffice bbb-transcription-controller.placeholder.sh
     steps:
-      - name: Checkout the result of merging the PR's source branch into its target branch
-        uses: ./.github/actions/merge-branches
+      - name: Checkout PR's source merged into its target branch
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.number }}/merge
+      - name: Checkout commit/branch
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: Set cache-key vars
         run: |
           BUILD_DIRS="$(echo '${{ matrix.build-list || matrix.package }}' | sed 's/[^ ]\+/build\/packages-template\/&/g')"
@@ -125,8 +133,16 @@ jobs:
   bbb-libreoffice-image:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout the result of merging the PR's source branch into its target branch
-        uses: ./.github/actions/merge-branches
+      - name: Checkout PR's source merged into its target branch
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.number }}/merge
+      - name: Checkout commit/branch
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: LIBREOFFICE CACHE - Set cache-key vars
         run: |
           echo "BBB_LIBREOFFICE_IMAGE_NAME=$(head -n 1 bbb-libreoffice/docker/Dockerfile | cut -d ' ' -f 2)" >> $GITHUB_ENV
@@ -252,8 +268,16 @@ jobs:
       shard: ${{ matrix.shard }}/8
       MATRIX_SHARD_UNDERSCORED: ${{ matrix.shard }}_8
     steps:
-      - name: Checkout the result of merging the PR's source branch into its target branch
-        uses: ./.github/actions/merge-branches
+      - name: Checkout PR's source merged into its target branch
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.number }}/merge
+      - name: Checkout commit/branch
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: Install BBB
         timeout-minutes: 60
         uses: ./.github/actions/install-bbb
@@ -357,8 +381,16 @@ jobs:
     env:
       SAMPLES_WITH_TESTS: "sample-action-button-dropdown-plugin sample-actions-bar-plugin sample-audio-settings-dropdown-plugin sample-camera-settings-dropdown-plugin sample-custom-subscription-hook sample-data-channel-plugin"
     steps:
-      - name: Checkout the result of merging the PR's source branch into its target branch
-        uses: ./.github/actions/merge-branches
+      - name: Checkout PR's source merged into its target branch
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.number }}/merge
+      - name: Checkout commit/branch
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: Install BBB
         timeout-minutes: 60
         uses: ./.github/actions/install-bbb
@@ -489,8 +521,16 @@ jobs:
     env:
       hasReportData: ${{ needs.install-and-run-bbb-tests.result == 'success' || needs.install-and-run-bbb-tests.result == 'failure' && needs.install-and-run-plugin-tests.result == 'success' || needs.install-and-run-plugin-tests.result == 'failure' }}
     steps:
-      - name: Checkout the result of merging the PR's source branch into its target branch
-        uses: ./.github/actions/merge-branches
+      - name: Checkout PR's source merged into its target branch
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.number }}/merge
+      - name: Checkout commit/branch
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       # temporarily disabled as merged blob reports are not being used
       # - name: Merge and upload the blob reports
       # if: ${{ env.hasReportData }}
