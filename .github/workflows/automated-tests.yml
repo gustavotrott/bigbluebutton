@@ -79,9 +79,17 @@ jobs:
             build-list: bbb-mkclean bbb-pads bbb-libreoffice-docker bbb-transcription-controller bigbluebutton bbb-livekit
             cache-files-list: bbb-pads.placeholder.sh bbb-libreoffice bbb-transcription-controller.placeholder.sh
     steps:
-      - uses: actions/checkout@v4
       - name: Checkout PR's source merged into its target branch
-        uses: ./.github/actions/merge-branches
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.number }}/merge
+          fetch-depth: 0 # Fetch all history (necessary to compare last commit for each porject and use cache)
+      - name: Checkout commit/branch
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: Set cache-key vars
         run: |
           BUILD_DIRS="$(echo '${{ matrix.build-list || matrix.package }}' | sed 's/[^ ]\+/build\/packages-template\/&/g')"
@@ -514,16 +522,6 @@ jobs:
     env:
       hasReportData: ${{ needs.install-and-run-bbb-tests.result == 'success' || needs.install-and-run-bbb-tests.result == 'failure' && needs.install-and-run-plugin-tests.result == 'success' || needs.install-and-run-plugin-tests.result == 'failure' }}
     steps:
-      - name: Checkout PR's source merged into its target branch
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@v4
-        with:
-          ref: refs/pull/${{ github.event.number }}/merge
-      - name: Checkout commit/branch
-        if: github.event_name != 'pull_request'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
       # temporarily disabled as merged blob reports are not being used
       # - name: Merge and upload the blob reports
       # if: ${{ env.hasReportData }}
