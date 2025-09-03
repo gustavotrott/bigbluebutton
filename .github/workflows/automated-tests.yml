@@ -95,7 +95,11 @@ jobs:
           echo "Including build dirs: $BUILD_DIRS"
           LIST="${{ matrix.cache-files-list }} $BUILD_DIRS .gitlab-ci.yml build/deb-helper.sh"
           TREE_HASHES=$(printf "%s\n" $LIST | xargs -n1 git rev-parse HEAD: 2>/dev/null || true)
+          echo "TREE_HASHES:"
+          echo $TREE_HASHES
           CACHE_DIGEST=$(printf "%s" "$TREE_HASHES" | (sha256sum 2>/dev/null || shasum -a 256) | awk '{print $1}')
+          echo "CACHE_DIGEST:"
+          echo $CACHE_DIGEST
           echo "CACHE_KEY_FILES=$CACHE_DIGEST" >> $GITHUB_ENV
 
           echo "CACHE_KEY_URLS=$(echo '${{ matrix.cache-urls-list }}' | xargs -r -n 1 curl -Is | grep -i 'Last-Modified' | md5sum | cut -c1-10)" >> $GITHUB_ENV
