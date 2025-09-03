@@ -94,7 +94,7 @@ jobs:
           BUILD_DIRS="$(echo '${{ matrix.build-list || matrix.package }}' | sed 's/[^ ]\+/build\/packages-template\/&/g')"
           echo "Including build dirs: $BUILD_DIRS"
           LIST="${{ matrix.cache-files-list }} $BUILD_DIRS .gitlab-ci.yml build/deb-helper.sh"
-          TREE_HASHES=$(printf "%s\n" $LIST | xargs -n1 git rev-parse HEAD: 2>/dev/null || true)
+          TREE_HASHES=$(echo $LIST | tr ' ' '\n' | xargs -I {} git rev-parse HEAD:{} 2>/dev/null)
           echo "TREE_HASHES:"
           echo $TREE_HASHES
           CACHE_DIGEST=$(printf "%s" "$TREE_HASHES" | (sha256sum 2>/dev/null || shasum -a 256) | awk '{print $1}')
