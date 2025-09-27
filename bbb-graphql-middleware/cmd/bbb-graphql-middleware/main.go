@@ -13,7 +13,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/time/rate"
 )
 
 func main() {
@@ -34,6 +33,7 @@ func main() {
 	common.InitUniqueID()
 	log = log.WithField("graphql-middleware-uid", common.GetUniqueID())
 
+	log.Info("Running TEST version")
 	log.Infof("Logger level=%v", log.Logger.Level)
 
 	// Listen msgs from akka (for example to invalidate connection)
@@ -48,7 +48,7 @@ func main() {
 
 	// Websocket listener
 
-	rateLimiter := rate.NewLimiter(rate.Limit(cfg.Server.MaxConnectionsPerSecond), cfg.Server.MaxConnectionsPerSecond)
+	rateLimiter := common.NewCustomRateLimiter(cfg.Server.MaxConnectionsPerSecond)
 
 	http.HandleFunc("/graphql", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)

@@ -1,11 +1,13 @@
-import { useMutation } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client';
 import React, { useContext, useEffect, useState } from 'react';
 import Bowser from 'bowser';
 import { isBrowserSupported } from 'livekit-client';
 import Session from '/imports/ui/services/storage/in-memory';
 import {
-  GetGuestLobbyInfo,
-  getGuestLobbyInfo,
+  getUserCurrent,
+  GetUserCurrentResponse,
+  getUserInfo,
+  GetUserInfoResponse,
   userJoinMutation,
 } from './queries';
 import { setAuthData } from '/imports/ui/core/local-states/useAuthData';
@@ -19,7 +21,6 @@ import GuestWaitContainer, { GUEST_STATUSES } from '../guest-wait/component';
 import Legacy from '/imports/ui/components/legacy/component';
 import PluginTopLevelManager from '/imports/ui/components/plugin-top-level-manager/component';
 import meetingStaticData from '/imports/ui/core/singletons/meetingStaticData';
-import useCurrentUser from '/imports/ui/core/hooks/useCurrentUser';
 
 const connectionTimeout = 60000;
 const MESSAGE_TIMEOUT = 3000;
@@ -221,52 +222,44 @@ const PresenceManager: React.FC<PresenceManagerProps> = ({
 };
 
 const PresenceManagerContainer: React.FC<PresenceManagerContainerProps> = ({ children }) => {
-  const {
-    data: currentUserData,
-    loading: currentUserLoading,
-    errors: currentUserErrors,
-  } = useCurrentUser((u) => ({
-    authToken: u.authToken,
-    joinErrorCode: u.joinErrorCode,
-    joinErrorMessage: u.joinErrorMessage,
-    joined: u.joined,
-    ejectReasonCode: u.ejectReasonCode,
-    loggedOut: u.loggedOut,
-    guestStatus: u.guestStatus,
-    meeting: u.meeting,
-    name: u.name,
-    extId: u.extId,
-    userId: u.userId,
-  }));
-
-  const { error, data } = useDeduplicatedSubscription<GetGuestLobbyInfo>(getGuestLobbyInfo, {
-    skip: !!currentUserLoading || !!currentUserErrors || (!!currentUserData && currentUserData.guestStatus === 'ALLOW'),
-  });
+  const { loading, error, data } = useDeduplicatedSubscription<GetUserCurrentResponse>(getUserCurrent);
 
   const meetingStaticStore = meetingStaticData.getMeetingData();
 
+  const {
+    loading: userInfoLoading,
+    error: userInfoError,
+    data: userInfoData,
+  } = useQuery<GetUserInfoResponse>(getUserInfo);
+
   const loadingContextInfo = useContext(LoadingContext);
-  if (error) {
+  if (loading || userInfoLoading) return null;
+  if (error || userInfoError) {
     loadingContextInfo.setLoading(false);
     logger.debug(`Error on user authentication: ${error}`);
   }
 
-  if (!currentUserData || !meetingStaticStore) return null;
+  if (
+    !userInfoLoading
+    && (userInfoData?.user_current.length === 0)
+  ) {
+    throw new Error('Meeting Not Found.', { cause: 'meeting_not_found' });
+  }
+
+  if (!data || data.user_current.length === 0 || !meetingStaticStore) return null;
+  if (!userInfoData
+      || userInfoData.user_current.length === 0) return null;
   const {
     authToken,
     joinErrorCode,
     joinErrorMessage,
     joined,
     ejectReasonCode,
-    loggedOut,
-    guestStatus,
     meeting,
-    userId,
-    extId,
-    name,
-  } = currentUserData;
-
-  const guestStatusDetails = data?.user_current?.[0]?.guestStatusDetails;
+    loggedOut,
+    guestStatusDetails,
+    guestStatus,
+  } = data.user_current[0];
 
   const {
     logoutUrl,
@@ -278,6 +271,8 @@ const PresenceManagerContainer: React.FC<PresenceManagerContainerProps> = ({ chi
     customDarkLogoUrl,
   } = meetingStaticStore;
 
+  const { extId, name: userName, userId } = userInfoData.user_current[0];
+
   const MIN_BROWSER_CONFIG = window.meetingClientSettings.public.minBrowserVersions;
   const userAgent = window.navigator?.userAgent;
   const isSupportedBrowser = Bowser.getParser(userAgent).satisfies(MIN_BROWSER_CONFIG);
@@ -285,28 +280,28 @@ const PresenceManagerContainer: React.FC<PresenceManagerContainerProps> = ({ chi
 
   return (
     <PresenceManager
-      authToken={authToken ?? ''}
+      authToken={authToken}
       logoutUrl={logoutUrl ?? ''}
-      meetingId={meetingId ?? ''}
-      meetingName={meetingName ?? ''}
-      userName={name ?? ''}
-      extId={extId ?? ''}
-      userId={userId ?? ''}
-      joined={joined ?? false}
-      joinErrorCode={joinErrorCode ?? ''}
-      joinErrorMessage={joinErrorMessage ?? ''}
-      meetingEnded={meeting?.ended ?? false}
-      endedReasonCode={meeting?.endedReasonCode ?? ''}
-      endedBy={meeting?.endedByUserName ?? ''}
-      ejectReasonCode={ejectReasonCode ?? ''}
+      meetingId={meetingId}
+      meetingName={meetingName}
+      userName={userName}
+      extId={extId}
+      userId={userId}
+      joined={joined}
+      joinErrorCode={joinErrorCode}
+      joinErrorMessage={joinErrorMessage}
+      meetingEnded={meeting.ended}
+      endedReasonCode={meeting.endedReasonCode}
+      endedBy={meeting.endedByUserName}
+      ejectReasonCode={ejectReasonCode}
       bannerColor={bannerColor ?? ''}
       bannerText={bannerText ?? ''}
-      loggedOut={loggedOut ?? false}
+      loggedOut={loggedOut}
       customLogoUrl={customLogoUrl ?? ''}
       customDarkLogoUrl={customDarkLogoUrl ?? ''}
       guestLobbyMessage={guestStatusDetails?.guestLobbyMessage ?? null}
       positionInWaitingQueue={guestStatusDetails?.positionInWaitingQueue ?? null}
-      guestStatus={guestStatus ?? ''}
+      guestStatus={guestStatus}
       isSupportedBrowser={isSupportedBrowser}
       hasWebrtcSupport={hasWebrtcSupport}
     >
