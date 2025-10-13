@@ -681,7 +681,16 @@ If you want to have all users join muted, you can add an overwrite in `/etc/bigb
 muteOnStart=true
 ```
 
-After making them modification, restart your server with `sudo bbb-conf --restart` to apply the changes.
+Mute state is applied to all users joining the meeting, except telephone (dial-in) users.
+If desired, enforcement can be enabled for telephone users by setting the following property in `/etc/bigbluebutton/bbb-apps-akka.conf`:
+
+```properties
+voiceConf {
+  dialInEnforceMuteOnStart = true
+}
+```
+
+Restart your server with `sudo bbb-conf --restart` to apply the changes.
 
 #### Turn off "you are now muted"
 

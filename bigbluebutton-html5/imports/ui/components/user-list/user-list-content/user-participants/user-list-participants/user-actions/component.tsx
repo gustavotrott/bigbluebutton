@@ -69,7 +69,6 @@ interface DropdownItem {
 }
 
 interface Writer {
-  pageId: string;
   userId: string;
 }
 
@@ -228,7 +227,6 @@ const UserActions: React.FC<UserActionsProps> = ({
   const [getWriters] = useLazyQuery(
     CURRENT_PAGE_WRITERS_QUERY,
     {
-      variables: { pageId },
       fetchPolicy: 'no-cache',
     },
   );
@@ -242,14 +240,11 @@ const UserActions: React.FC<UserActionsProps> = ({
     try {
       // Fetch the writers data
       const { data } = await getWriters();
-      const allWriters: Writer[] = data?.pres_page_writers || [];
-      const currentWriters = allWriters?.filter((writer: Writer) => writer.pageId === pageId);
+      const currentWriters: Writer[] = data?.user_whiteboardWriteAccess || [];
 
       // Determine if the user has access
-      const { userId, presPagesWritable } = user;
-      const hasAccess = presPagesWritable.some(
-        (page: { userId: string; isCurrentPage: boolean }) => (page?.userId === userId && page?.isCurrentPage),
-      );
+      const { userId, whiteboardWriteAccess } = user;
+      const hasAccess = whiteboardWriteAccess === true;
 
       // Prepare the updated list of user IDs for whiteboard access
       const usersIds = currentWriters?.map((writer: { userId: string }) => writer?.userId);
@@ -320,9 +315,7 @@ const UserActions: React.FC<UserActionsProps> = ({
     (item: PluginSdk.UserListDropdownInterface) => (user?.userId === item?.userId),
   );
 
-  const hasWhiteboardAccess = user.presPagesWritable?.some(
-    (page: { pageId: string; userId: string }) => (page.pageId === pageId && page.userId === user.userId),
-  );
+  const hasWhiteboardAccess = user?.whiteboardWriteAccess === true;
 
   const [setRole] = useMutation(SET_ROLE);
   const [chatCreateWithUser] = useMutation(CHAT_CREATE_WITH_USER);
@@ -375,7 +368,7 @@ const UserActions: React.FC<UserActionsProps> = ({
       allowed: user?.cameras?.length > 0
         && isVideoPinEnabledForCurrentUser(currentUser, isBreakout),
       key: 'pinVideo',
-      label: user.pinned
+      label: user?.pinned
         ? intl.formatMessage(messages.UnpinUserWebcam)
         : intl.formatMessage(messages.PinUserWebcam),
       onClick: () => {
@@ -383,11 +376,11 @@ const UserActions: React.FC<UserActionsProps> = ({
         setCameraPinned({
           variables: {
             userId: user.userId,
-            pinned: !user.pinned,
+            pinned: !user?.pinned,
           },
         });
       },
-      icon: user.pinned ? 'pin-video_off' : 'pin-video_on',
+      icon: user?.pinned ? 'pin-video_off' : 'pin-video_on',
     },
     {
       allowed: (() => {

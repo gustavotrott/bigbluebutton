@@ -124,6 +124,7 @@ const AudioContainer = (props) => {
   const toggleVoice = useToggleVoice();
   const userSelectedMicrophone = !!useStorageKey(CLIENT_DID_USER_SELECT_MICROPHONE_KEY, 'session');
   const userSelectedListenOnly = !!useStorageKey(CLIENT_DID_USER_SELECT_LISTEN_ONLY_KEY, 'session');
+  const storageMuteState = useStorageKey(Service.getStorageMuteStateKey(), 'session');
   const { microphoneConstraints } = useSettings(SETTINGS.APPLICATION);
 
   const meetingIsBreakout = useMeetingIsBreakout();
@@ -204,12 +205,20 @@ const AudioContainer = (props) => {
     if (Service.isConnected()) return;
 
     if (userSelectedMicrophone) {
-      joinMicrophone({ skipEchoTest: true, muted: meeting?.voiceSettings?.muteOnStart });
+      joinMicrophone({
+        skipEchoTest: true,
+        muted: meeting?.voiceSettings?.muteOnStart || storageMuteState,
+      });
       return;
     }
 
     if (userSelectedListenOnly) joinListenOnly();
-  }, [userSelectedMicrophone, userSelectedListenOnly, meeting?.voiceSettings?.muteOnStart]);
+  }, [
+    userSelectedMicrophone,
+    userSelectedListenOnly,
+    meeting?.voiceSettings?.muteOnStart,
+    storageMuteState,
+  ]);
 
   useEffect(() => {
     // Data is not loaded yet.
