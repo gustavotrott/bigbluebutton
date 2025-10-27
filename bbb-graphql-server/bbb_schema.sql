@@ -1072,6 +1072,55 @@ WHERE "user"."currentlyInMeeting" is true
 AND "user"."whiteboardWriteAccess" is true;
 
 
+create unlogged table "user_activity"(
+	"meetingId" varchar(100),
+    "userId" varchar(50),
+    "bucketTime" timestamp with time zone,
+    "activityName" text,
+	"count" integer,
+    "parentMeetingId" varchar(100), --allow parent meeting to fetch data
+    "userIdInParentMeeting" varchar(50), --allow parent meeting to fetch data
+    "breakoutRoomId" varchar(100), --in case the user is in a breakoutRoom
+	CONSTRAINT "user_activity_pkey" PRIMARY KEY ("meetingId", "userId", "bucketTime", "activityName"),
+	FOREIGN KEY ("meetingId", "userId") REFERENCES "user"("meetingId","userId") ON DELETE cascade
+);
+create index "idx_user_activity_parentMeeting_bucketTime" on "user_activity" ("parentMeetingId", "bucketTime");
+create index "idx_user_activity_parentMeeting_userId" on "user_activity" ("parentMeetingId", "userIdInParentMeeting", "bucketTime", "activityName");
+
+CREATE OR REPLACE FUNCTION populate_user_activity_parent_meeting()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Populate fields only if its null
+    IF NEW."parentMeetingId" IS NULL OR NEW."userIdInParentMeeting" IS NULL THEN
+        SELECT
+            mb."parentId",
+            regexp_replace(u."extId", '-.*$', '')
+        INTO
+            NEW."parentMeetingId",
+            NEW."userIdInParentMeeting"
+        FROM "user" u
+        JOIN "meeting_breakout" mb ON mb."meetingId" = u."meetingId"
+        WHERE u."meetingId" = NEW."meetingId"
+        AND u."userId" = NEW."userId";
+
+        SELECT
+            bk."breakoutRoomId"
+        INTO
+            NEW."breakoutRoomId"
+        FROM "meeting" m
+        LEFT JOIN "breakoutRoom" bk ON bk."externalId" = m."extId"
+        WHERE m."meetingId" = NEW."meetingId";
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_populate_user_activity_parent_meeting
+    BEFORE INSERT ON "user_activity"
+    FOR EACH ROW
+    EXECUTE FUNCTION populate_user_activity_parent_meeting();
+
 -- ===================== CHAT TABLES
 
 

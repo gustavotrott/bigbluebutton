@@ -6,6 +6,7 @@ import org.bigbluebutton.common2.msgs._
 import org.bigbluebutton.common2.util.JsonUtil
 import org.bigbluebutton.core.OutMessageGateway
 import org.bigbluebutton.core.apps.groupchats.GroupChatApp
+import org.bigbluebutton.core.db.UserActivityDAO
 import org.bigbluebutton.core.models._
 import org.bigbluebutton.core2.message.senders.MsgBuilder
 
@@ -20,6 +21,7 @@ case class Meeting(
   intId: String,
   extId: String,
   name:  String,
+  learningDashboardDisabled: Boolean,
   downloadSessionDataEnabled: Boolean,
   other: Map[String, String] = Map(),
   users: Map[String, User] = Map(),
@@ -218,6 +220,8 @@ class LearningDashboardActor(
         val updatedMeeting = meeting.copy(users = meeting.users + (updatedUser.userKey -> updatedUser))
 
         meetings += (updatedMeeting.intId -> updatedMeeting)
+
+        UserActivityDAO.insert(msg.header.meetingId, msg.header.userId, "chat-message")
       }
     }
   }
@@ -232,6 +236,8 @@ class LearningDashboardActor(
         val updatedMeeting = meeting.copy(users = meeting.users + (updatedUser.userKey -> updatedUser))
 
         meetings += (updatedMeeting.intId -> updatedMeeting)
+
+        UserActivityDAO.insert(msg.header.meetingId, msg.body.userId, "shared-notes")
       }
     }
   }
@@ -245,6 +251,8 @@ class LearningDashboardActor(
       val updatedMeeting = meeting.copy(users = meeting.users + (updatedUser.userKey -> updatedUser))
 
       meetings += (updatedMeeting.intId -> updatedMeeting)
+
+      UserActivityDAO.insert(msg.header.meetingId, msg.header.userId, "whiteboard-annotation")
     }
   }
 
@@ -446,6 +454,8 @@ class LearningDashboardActor(
         val updatedMeeting = meeting.copy(users = meeting.users + (updatedUser.userKey -> updatedUser))
 
         meetings += (updatedMeeting.intId -> updatedMeeting)
+
+        UserActivityDAO.insert(msg.header.meetingId, msg.header.userId, "raise-hand")
       }
     }
   }
@@ -492,6 +502,8 @@ class LearningDashboardActor(
           val updatedMeeting = meeting.copy(users = meeting.users + (updatedUser.userKey -> updatedUser))
           meetings += (updatedMeeting.intId -> updatedMeeting)
         }
+
+        UserActivityDAO.insert(msg.header.meetingId, msg.header.userId, "reaction")
       }
     }
   }
@@ -517,6 +529,8 @@ class LearningDashboardActor(
       val updatedUser = user.copy(webcams = user.webcams :+ Webcam())
       val updatedMeeting = meeting.copy(users = meeting.users + (updatedUser.userKey -> updatedUser))
       meetings += (updatedMeeting.intId -> updatedMeeting)
+
+      UserActivityDAO.insert(msg.header.meetingId, msg.header.userId, "camera-shared")
     }
   }
 
@@ -586,6 +600,8 @@ class LearningDashboardActor(
         val updatedUser = user.copy(talk = user.talk.copy(lastTalkStartedOn = System.currentTimeMillis()))
         val updatedMeeting = meeting.copy(users = meeting.users + (updatedUser.userKey -> updatedUser))
         meetings += (updatedMeeting.intId -> updatedMeeting)
+
+        UserActivityDAO.insert(msg.header.meetingId, msg.header.userId, "talking")
       } else {
         endUserTalk(meeting, user)
       }
@@ -621,6 +637,8 @@ class LearningDashboardActor(
 
       val updatedMeeting = meeting.copy(polls = meeting.polls + (newPoll.pollId -> newPoll))
       meetings += (updatedMeeting.intId -> updatedMeeting)
+
+      UserActivityDAO.insert(msg.header.meetingId, msg.header.userId, "poll-created")
     }
   }
 
@@ -691,6 +709,8 @@ class LearningDashboardActor(
         val updatedUser = user.copy(answers = user.answers + (msg.body.pollId -> (user.answers.get(msg.body.pollId).getOrElse(Vector()) :+ msg.body.answer)))
         val updatedMeeting = meeting.copy(users = meeting.users + (updatedUser.userKey -> updatedUser))
         meetings += (updatedMeeting.intId -> updatedMeeting)
+
+        UserActivityDAO.insert(msg.header.meetingId, msg.header.userId, "poll-response")
       }
     }
   }
@@ -701,6 +721,8 @@ class LearningDashboardActor(
     } yield {
       val updatedMeeting = meeting.copy(screenshares = meeting.screenshares :+ Screenshare())
       meetings += (updatedMeeting.intId -> updatedMeeting)
+
+      UserActivityDAO.insert(msg.header.meetingId, msg.body.userId, "screenshare")
     }
   }
 
@@ -737,11 +759,11 @@ class LearningDashboardActor(
   }
 
   private def handleCreateMeetingReqMsg(msg: CreateMeetingReqMsg): Unit = {
-    if (msg.body.props.meetingProp.disabledFeatures.contains("learningDashboard") == false) {
       val newMeeting = Meeting(
         msg.body.props.meetingProp.intId,
         msg.body.props.meetingProp.extId,
         msg.body.props.meetingProp.name,
+        learningDashboardDisabled = msg.body.props.meetingProp.disabledFeatures.contains("learningDashboard"),
         downloadSessionDataEnabled = !msg.body.props.meetingProp.disabledFeatures.contains("learningDashboardDownloadSessionData"),
         genericDataTitles = Vector(),
         other = Map(
@@ -753,8 +775,7 @@ class LearningDashboardActor(
       meetings += (newMeeting.intId -> newMeeting)
       meetingAccessTokens += (newMeeting.intId -> msg.body.props.password.learningDashboardAccessToken)
 
-      log.info(" created for meeting {}.",msg.body.props.meetingProp.intId)
-    } else {
+    if (msg.body.props.meetingProp.disabledFeatures.contains("learningDashboard")) {
       log.info(" disabled for meeting {}.",msg.body.props.meetingProp.intId)
     }
   }
@@ -877,19 +898,21 @@ class LearningDashboardActor(
   }
 
   private def sendReport(meeting : Meeting): Unit = {
-    val activityJson: String = JsonUtil.toJson(meeting)
+    if(!meeting.learningDashboardDisabled) {
+      val activityJson: String = JsonUtil.toJson(meeting)
 
-    //Avoid send repeated activity jsons
-    val activityJsonHash : String = MessageDigest.getInstance("MD5").digest(activityJson.getBytes).mkString
-    if(!meetingsLastJsonHash.contains(meeting.intId) || meetingsLastJsonHash.getOrElse(meeting.intId, "") != activityJsonHash) {
-      for {
-        learningDashboardAccessToken <- meetingAccessTokens.get(meeting.intId)
-      } yield {
-        val event = MsgBuilder.buildLearningDashboardEvtMsg(meeting.intId, learningDashboardAccessToken, activityJson)
-        outGW.send(event)
-        meetingsLastJsonHash += (meeting.intId -> activityJsonHash)
+      //Avoid send repeated activity jsons
+      val activityJsonHash : String = MessageDigest.getInstance("MD5").digest(activityJson.getBytes).mkString
+      if(!meetingsLastJsonHash.contains(meeting.intId) || meetingsLastJsonHash.getOrElse(meeting.intId, "") != activityJsonHash) {
+        for {
+          learningDashboardAccessToken <- meetingAccessTokens.get(meeting.intId)
+        } yield {
+          val event = MsgBuilder.buildLearningDashboardEvtMsg(meeting.intId, learningDashboardAccessToken, activityJson)
+          outGW.send(event)
+          meetingsLastJsonHash += (meeting.intId -> activityJsonHash)
 
-        log.debug("Learning Dashboard data sent for meeting {}", meeting.intId)
+          log.debug("Learning Dashboard data sent for meeting {}", meeting.intId)
+        }
       }
     }
   }
