@@ -29,7 +29,6 @@ export const registerServiceWorker = (): void => {
           if (!navigator.serviceWorker.controller) return;
           const assets = [
             new URL('index.html', window.location.href).toString(),
-            new URL('styles.css', window.location.href).toString(),
           ];
 
           if (window.__BUNDLE_URL__) {
