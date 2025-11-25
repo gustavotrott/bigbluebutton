@@ -81,6 +81,12 @@ if $SAFARI; then
   cd ..
 fi
 
+# Compress CSS, Javascript and tensorflow WASM binaries used for virtual backgrounds. Keep the
+# uncompressed versions as well so it works with mismatched nginx location blocks
+find dist -name '*.js' -exec gzip -k -f -9 '{}' \;
+find dist -name '*.css' -exec gzip -k -f -9 '{}' \;
+find dist -name '*.wasm' -exec gzip -k -f -9 '{}' \;
+
 echo "Copying dist/* to /usr/share/bigbluebutton/html5-client/..."
 sudo cp -rf dist/* /usr/share/bigbluebutton/html5-client/
 
