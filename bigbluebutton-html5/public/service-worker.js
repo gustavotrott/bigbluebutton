@@ -3,7 +3,6 @@ const CACHE_NAME = `bbb-html5-${CACHE_VERSION}`;
 const PRECACHE_URLS = [
   './',
   './index.html',
-  './manifest.webmanifest',
   './stylesheets/normalize.css',
   './stylesheets/bbb-icons.css',
   './stylesheets/fonts.css',

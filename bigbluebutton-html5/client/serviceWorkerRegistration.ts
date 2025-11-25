@@ -30,7 +30,6 @@ export const registerServiceWorker = (): void => {
           const assets = [
             new URL('index.html', window.location.href).toString(),
             new URL('styles.css', window.location.href).toString(),
-            new URL('manifest.webmanifest', window.location.href).toString(),
           ];
 
           if (window.__BUNDLE_URL__) {
