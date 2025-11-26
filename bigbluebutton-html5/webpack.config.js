@@ -32,6 +32,9 @@ const config = {
   },
   devtool: 'source-map',
   plugins: [
+    new webpack.optimize.LimitChunkCountPlugin({
+      maxChunks: 1,
+    }),
     new HtmlWebpackPlugin({
       template: './client/main.html',
       filename: 'index.html',
