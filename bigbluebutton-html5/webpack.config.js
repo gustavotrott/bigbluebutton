@@ -61,11 +61,13 @@ const config = {
       patterns: [
         { from: 'public', to: '.' },
         { from: 'private', to: 'private' },
+        { from: 'client/service-worker.js', to: 'service-worker.js' },
       ],
     }),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(env),
       'process.env.DETAILED_LOGS': detailedLogs,
+      'process.env.PUBLIC_URL': JSON.stringify(process.env.PUBLIC_URL || ''),
     }),
     (isDev && hotReload) && new ReactRefreshWebpackPlugin({
       overlay: false,

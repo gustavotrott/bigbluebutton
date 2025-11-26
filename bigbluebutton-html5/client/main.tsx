@@ -11,8 +11,23 @@ import CustomUsersSettings from '/imports/ui/components/join-handler/custom-user
 import MeetingClient from '/client/meetingClient';
 import CustomStyles from '/imports/ui/components/custom-styles/component';
 import 'react-toastify/dist/ReactToastify.css';
+import { registerServiceWorker } from '/client/serviceWorkerRegistration';
 
 const STARTUP_CRASH_METADATA = { logCode: 'app_startup_crash', logMessage: 'Possible startup crash' };
+
+// Register service worker to cache assets
+registerServiceWorker({
+  onSuccess: () => {
+    console.log('[BBB] Service worker registered successfully. Content is cached for offline use.');
+  },
+  onUpdate: () => {
+    console.log('[BBB] New content is available. A page refresh is recommended.');
+    // Optionally show a notification to the user about the update
+  },
+  onError: (error) => {
+    console.error('[BBB] Service worker registration failed:', error);
+  },
+});
 /* eslint-disable */
 if (
   process.env.NODE_ENV === 'production'
