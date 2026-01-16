@@ -58,7 +58,7 @@ public:
     # the default logoutUrl matches window.location.origin i.e. bigbluebutton.org for demo.bigbluebutton.org
     # in some cases we want only custom logoutUrl to be used when provided on meeting create. Default value: true
     askForConfirmationOnLeave: true
-    wakeLock: 
+    wakeLock:
       enabled: true
     allowDefaultLogoutUrl: true
     skipMeetingEnded: false
@@ -85,7 +85,7 @@ public:
     # Flag used to enable apollo dev tools in production
     enableApolloDevTools: false
     # Time used when the client connection is stale
-    # and a new connection is attempted 
+    # and a new connection is attempted
     terminateAndRetryConnection: 30_000
     # Allows users to enable automatic transcription when joining a meeting.
     # Automatic transcription requires the browser to support the web
@@ -491,7 +491,7 @@ public:
     # cameraSortingModes.paginationSorting: sorting mode to be applied when pagination is active
     # cameraSortingModes.defaultSorting: sorting mode when pagination is not active (full mesh)
     # Current implemented modes are:
-    # 'LOCAL_ALPHABETICAL' | 'VOICE_ACTIVITY_LOCAL' | 'LOCAL_VOICE_ACTIVITY' | 'LOCAL_PRESENTER_ALPHABETICAL'
+    # 'LOCAL_ALPHABETICAL' | 'VOICE_ACTIVITY_LOCAL' | 'LOCAL_VOICE_ACTIVITY' | 'LOCAL_PRESENTER_ALPHABETICAL' | 'PRESENTER_LOCAL_PINNED'
     # The algorithm names are self-explanatory.
     cameraSortingModes:
       defaultSorting: LOCAL_ALPHABETICAL
@@ -747,11 +747,7 @@ public:
       track1: "RelaxingMusic"
       track2: "CalmMusic"
       track3: "aristocratDrums"
-    interval:
-      clock: 100
-      offset: 60000
     time: 5
-    tabIndicator: false
   chat:
     enabled: true
     itemsPerPage: 100
@@ -789,7 +785,7 @@ public:
     # e.g.: disableEmojis: ['grin','laughing']
     # use the id of the emojis from https://raw.githubusercontent.com/missive/emoji-mart/16978d04a766eec6455e2e8bb21cd8dc0b3c7436/packages/emoji-mart-data/sets/1/all.json
     disableEmojis: []
-    allowedElements: ['a', 'code', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'ol', 'ul', 'p', 'strong']
+    markdownImageAllowed: false
     # available options for toolbar: reply, edit, delete, reactions
     # example: ['reply', 'delete']
     toolbar: ['reply', 'delete', 'edit', 'reactions']
@@ -821,6 +817,9 @@ public:
     showPushLayoutToggle: true
     showSessionDetailsOnJoin: true
     showScreenshareQuickSwapButton: false
+    syncCameraDockSizeAndPosition: false
+    # if false, the user can't change the layout (no layout selection modal)
+    enableDeprecatedLayoutSelection: true
   pads:
     url: ETHERPAD_HOST
   media:
@@ -862,8 +861,8 @@ public:
     # skipInitialCamEnumeration: whether to skip the initial camera enumeration
     # See https://github.com/bigbluebutton/bigbluebutton/issues/21746
     skipInitialCamEnumeration: false
-    # transparentListenOnly: whether the client should use the transparent 
-    # listen only mechanism. 
+    # transparentListenOnly: whether the client should use the transparent
+    # listen only mechanism.
     # It does not remove the "Listen Only" option from the audio modal
     # by itself, but it allows users to switch modes on the fly and
     # improves server CPU efficiency for microphone users.
@@ -956,6 +955,9 @@ public:
       # when set to true and in effect (conditional to client behavior).
       selectiveSubscription: true
       logLevel: 3
+      # reconnectOnFatalFailures: whether to trigger LK room reconnections when
+      # fatal errors occur (e.g.: unrecoverable publish timeouts). Default is false.
+      reconnectOnFatalFailures: false
       roomOptions:
         adaptiveStream: true
         dynacast: true
@@ -1046,8 +1048,6 @@ public:
         mime: image/png
       - extension: .webp
         mime: image/webp
-      - extension: .svg
-        mime: image/svg+xml
   user:
     role_moderator: MODERATOR
     role_viewer: VIEWER

@@ -253,7 +253,15 @@ case class ClearedAllUsersReactionEvtMsgBody()
  */
 object UserConnectionAliveReqMsg { val NAME = "UserConnectionAliveReqMsg" }
 case class UserConnectionAliveReqMsg(header: BbbClientMsgHeader, body: UserConnectionAliveReqMsgBody) extends StandardMsg
-case class UserConnectionAliveReqMsgBody(userId: String, sessionToken: String, clientSessionUUID: String, networkRttInMs: Double, applicationRttInMs: Double, traceLog: String)
+case class UserConnectionAliveReqMsgBody(
+    userId:             String,
+    sessionToken:       String,
+    serverRequestId:    String,
+    clientSessionUUID:  String,
+    networkRttInMs:     Double,
+    applicationRttInMs: Double,
+    traceLog:           String
+)
 
 /**
  * Sent from client to update clientSettings.
@@ -279,6 +287,17 @@ case class UserMobileFlagChangedEvtMsgBody(userId: String, mobile: Boolean)
 object AssignPresenterReqMsg { val NAME = "AssignPresenterReqMsg" }
 case class AssignPresenterReqMsg(header: BbbClientMsgHeader, body: AssignPresenterReqMsgBody) extends StandardMsg
 case class AssignPresenterReqMsgBody(assignedBy: String, newPresenterId: String)
+
+/**
+ * Sent from client to change the whiteboardWriteAccess of the user in the meeting.
+ */
+object SetUserWhiteboardWriteAccessReqMsg { val NAME = "SetUserWhiteboardWriteAccessReqMsg" }
+case class SetUserWhiteboardWriteAccessReqMsg(header: BbbClientMsgHeader, body: SetUserWhiteboardWriteAccessReqMsgBody) extends StandardMsg
+case class SetUserWhiteboardWriteAccessReqMsgBody(userIds: Vector[String], allUsers: Boolean, whiteboardWriteAccess: Boolean)
+
+object SetUserWhiteboardWriteAccessEvtMsg { val NAME = "SetUserWhiteboardWriteAccessEvtMsg" }
+case class SetUserWhiteboardWriteAccessEvtMsg(header: BbbClientMsgHeader, body: SetUserWhiteboardWriteAccessEvtMsgBody) extends BbbCoreMsg
+case class SetUserWhiteboardWriteAccessEvtMsgBody(userId: String, whiteboardWriteAccess: Boolean)
 
 /**
  * Sent from client to change the video pin of the user in the meeting.

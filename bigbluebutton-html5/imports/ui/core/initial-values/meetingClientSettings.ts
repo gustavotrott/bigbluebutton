@@ -520,12 +520,7 @@ export const meetingClientSettingsInitialValues: MeetingClientSettings = {
         track2: 'CalmMusic',
         track3: 'aristocratDrums',
       },
-      interval: {
-        clock: 100,
-        offset: 60000,
-      },
       time: 5,
-      tabIndicator: false,
     },
     chat: {
       enabled: true,
@@ -566,22 +561,7 @@ export const meetingClientSettingsInitialValues: MeetingClientSettings = {
         enable: false,
       },
       disableEmojis: [],
-      allowedElements: [
-        'a',
-        'code',
-        'em',
-        'h1',
-        'h2',
-        'h3',
-        'h4',
-        'h5',
-        'h6',
-        'li',
-        'ol',
-        'ul',
-        'p',
-        'strong',
-      ],
+      markdownImageAllowed: false,
       toolbar: [],
     },
     userReaction: {
@@ -685,6 +665,7 @@ export const meetingClientSettingsInitialValues: MeetingClientSettings = {
         url: `wss://${window.location.hostname}/livekit`,
         selectiveSubscription: false,
         logLevel: LogLevel.warn,
+        reconnectOnFatalFailures: false,
         roomOptions: {
           adaptiveStream: true,
           dynacast: true,
@@ -698,6 +679,7 @@ export const meetingClientSettingsInitialValues: MeetingClientSettings = {
             forceStereo: false,
           },
           unpublishOnMute: false,
+          unpublishAfterMuteMs: 5000,
         },
         camera: {
           publishOptions: {

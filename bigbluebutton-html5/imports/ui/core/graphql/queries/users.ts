@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import type { User } from '/imports/ui/Types/user';
 
 export interface UsersCountSubscriptionResponse {
   user_aggregate: {
@@ -14,7 +15,6 @@ subscription UserListSubscription($offset: Int!, $limit: Int!) {
                 order_by: [
                   {presenter: desc},
                   {role: asc},
-                  {raiseHandTime: asc_nulls_last},
                   {isDialIn: desc},
                   {whiteboardWriteAccess: desc},
                   {nameSortable: asc},
@@ -59,7 +59,7 @@ subscription UserListSubscription($offset: Int!, $limit: Int!) {
       isDefaultName
       sequence
       shortName
-      currentlyInRoom
+      isUserCurrentlyInRoom
     }
     userLockSettings {
       disablePublicChat
@@ -77,14 +77,6 @@ export const USER_AGGREGATE_COUNT_SUBSCRIPTION = gql`
   }
 `;
 
-export const GET_USER_IDS = gql`
-  query Users {
-    user(where: { bot: { _eq: false } } ) {
-      userId
-    }
-  }
-`;
-
 export const GET_USER_NAMES = gql`
   query Users {
     user(where: { bot: { _eq: false } } ) {
@@ -95,3 +87,40 @@ export const GET_USER_NAMES = gql`
     }
   }
 `;
+
+export type RaisedHandUser = Pick<
+User,
+| 'userId'
+| 'name'
+| 'color'
+| 'presenter'
+| 'isModerator'
+| 'raiseHand'
+| 'whiteboardWriteAccess'
+> & {
+  raiseHandTime?: string;
+};
+
+export interface RaisedHandUsersSubscriptionResponse {
+  user: RaisedHandUser[];
+}
+
+export const RAISED_HAND_USERS = gql`
+subscription RaisedHandUsers {
+  user(
+    where: {
+      raiseHand: {_eq: true}
+    },
+    order_by: [
+      {raiseHandTime: asc_nulls_last},
+    ]) {
+    userId
+    name
+    color
+    presenter
+    isModerator
+    raiseHand
+    raiseHandTime
+    whiteboardWriteAccess
+  }
+}`;

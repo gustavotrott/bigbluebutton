@@ -239,7 +239,11 @@ or the mailing lists.
 ### Upgraded components
 
 Under the hood, BigBlueButton 3.0 installs on Ubuntu 22.04 64-bit, and the following key components have been upgraded
-...
+- Grails 7.0.0
+- Gradle 8.14.3
+- Groovy 4.0.21
+- Spring 6.2.11
+- Spring Boot 3.4.9 
 
 For full details on what is new in BigBlueButton 3.0, see the release notes.
 
@@ -366,11 +370,14 @@ Added
 - `maxPluginManifestsFetchUrlPayloadSize` added
 - `numPluginManifestsFetchingThreads` added
 - `extractTimeoutInMs` added
-- `pngCreationExecTimeoutInMs` added
-- `thumbnailCreationExecTimeoutInMs` added
+- `pngCreationExecTimeoutInMs` added, later (BBB 3.0.17) renamed to `pngCreationExecTimeout`
+- `pngCreationExecTimeout` added (used to be `pngCreationExecTimeoutInMs`)
+- `thumbnailCreationExecTimeoutInMs` added, later (BBB 3.0.17) renamed to `thumbnailCreationExecTimeout`
+- `thumbnailCreationExecTimeout` added (used to be `thumbnailCreationExecTimeoutInMs`)
 - `pdfPageDownscaleExecTimeoutInMs` added
 - `officeDocumentValidationExecTimeoutInMs` added
-- `textFileCreationExecTimeoutInMs` added
+- `textFileCreationExecTimeoutInMs` added, later (BBB 3.0.17) renamed to `textFileCreationExecTimeout`
+- `textFileCreationExecTimeout` added (used to be `textFileCreationExecTimeoutInMs`)
 - `presDownloadReadTimeoutInMs` added
 - `pngCreationConversionTimeout` added
 - `imageResizeWait` added
