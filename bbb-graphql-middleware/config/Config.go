@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
 
 	"dario.cat/mergo"
@@ -74,7 +76,11 @@ func (c *Config) loadConfigs() {
 	// Load default config file
 	configDefault, err := loadConfigFile(DefaultConfigPath)
 	if err != nil {
-		log.Fatalf("Error while loading config file (%s): %v", DefaultConfigPath, err)
+		testConfigDefault, testConfigErr := loadTestDefaultConfig()
+		if testConfigErr != nil {
+			log.Fatalf("Error while loading config file (%s): %v", DefaultConfigPath, err)
+		}
+		configDefault = testConfigDefault
 	}
 
 	// Load override config file if exists
@@ -95,6 +101,20 @@ func (c *Config) loadConfigs() {
 
 	// Update the singleton instance with the merged config
 	*instance = configDefault
+}
+
+func loadTestDefaultConfig() (Config, error) {
+	var config Config
+	if len(os.Args) == 0 || !strings.HasSuffix(os.Args[0], ".test") {
+		return config, os.ErrNotExist
+	}
+
+	_, currentFile, _, ok := runtime.Caller(0)
+	if !ok {
+		return config, os.ErrNotExist
+	}
+
+	return loadConfigFile(filepath.Join(filepath.Dir(currentFile), "config.yml"))
 }
 
 func loadConfigFile(path string) (Config, error) {

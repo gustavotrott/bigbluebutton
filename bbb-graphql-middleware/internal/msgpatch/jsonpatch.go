@@ -58,22 +58,22 @@ func GetPatchedMessage(
 				if shouldUseCustomJsonPatch, jsonDiffPatch = common.ValidateIfShouldUseCustomJsonPatch(
 					lastHasuraMessage.Payload.Data[dataKey],
 					hasuraMessage.Payload.Data[dataKey],
-					"userId"); shouldUseCustomJsonPatch {
-					common.StorePatchedMessageCache(meetingId, cacheKey, jsonDiffPatch)
-				} else if diffPatch, diffPatchErr := jsonpatch.CreatePatch(lastHasuraMessage.Payload.Data[dataKey], hasuraMessage.Payload.Data[dataKey]); diffPatchErr == nil {
-					var err error
-					if jsonDiffPatch, err = json.Marshal(diffPatch); err != nil {
-						log.Errorf("Error marshaling patch array: %v", err)
+					"userId"); !shouldUseCustomJsonPatch {
+					if diffPatch, diffPatchErr := jsonpatch.CreatePatch(lastHasuraMessage.Payload.Data[dataKey], hasuraMessage.Payload.Data[dataKey]); diffPatchErr == nil {
+						var err error
+						if jsonDiffPatch, err = json.Marshal(diffPatch); err != nil {
+							log.Errorf("Error marshaling patch array: %v", err)
+						}
+					} else {
+						log.Errorf("Error creating JSON patch: %v\n%v", diffPatchErr, string(hasuraMessage.Payload.Data[dataKey]))
 					}
-				} else {
-					log.Errorf("Error creating JSON patch: %v\n%v", diffPatchErr, string(hasuraMessage.Payload.Data[dataKey]))
 				}
 			}
 		}
 	}
 
 	// Use patch if the length is {minShrinkToUsePatch}% smaller than the original msg
-	if jsonDiffPatch != nil && float64(len(string(jsonDiffPatch)))/float64(len(string(hasuraMessage.Payload.Data[dataKey]))) < minShrinkToUsePatch {
+	if jsonDiffPatch != nil && float64(len(jsonDiffPatch))/float64(len(hasuraMessage.Payload.Data[dataKey])) < minShrinkToUsePatch {
 		// Modify receivedMessage to include the Patch and remove the previous data
 		// The key of the original message is kept to avoid errors (Apollo-client expects to receive this prop)
 
