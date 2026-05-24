@@ -17,9 +17,6 @@ import { useRemoteParticipants, useSpeakingParticipants } from '@livekit/compone
 import logger from '/imports/startup/client/logger';
 import Auth from '/imports/ui/services/auth';
 import {
-  MEDIA_GROUP_STREAMS_SUBSCRIPTION,
-} from '/imports/ui/components/livekit/selective-subscription/queries';
-import {
   MediaGroupStream,
   MediaSendersData,
   MediaType,
@@ -30,7 +27,7 @@ import {
   isAudioSource,
   selectParticipantsToSubscribe,
 } from '/imports/ui/components/livekit/selective-subscription/service';
-import createUseSubscription from '/imports/ui/core/hooks/createUseSubscription';
+import useUserMediaGroupStateStream from '/imports/ui/components/livekit/selective-subscription/mediaGroupStateStream';
 import AudioManager from '/imports/ui/services/audio-manager';
 import { useAutoplayState } from '/imports/ui/components/livekit/autoplay-modal/hooks';
 import useWhoIsUnmuted from '/imports/ui/core/hooks/useWhoIsUnmuted';
@@ -48,12 +45,6 @@ const PARTICIPANTS_UPDATE_FILTER = [
   RoomEvent.TrackSubscriptionFailed,
   RoomEvent.ActiveSpeakersChanged,
 ];
-
-const useMediaGroupStreamsSubscription = createUseSubscription(
-  MEDIA_GROUP_STREAMS_SUBSCRIPTION,
-  {},
-  true,
-);
 
 const getSelectiveSubscriptionConfig = () => {
   const selSubConfig = window.meetingClientSettings?.public?.media?.livekit?.selectiveSubscription;
@@ -190,18 +181,16 @@ export const useMediaSenders = (
   deafened: boolean,
   mediaType: MediaType,
 ): MediaSendersData => {
-  const { data, errors } = useMediaGroupStreamsSubscription();
+  const { data, error } = useUserMediaGroupStateStream();
 
-  if (errors) {
-    errors.forEach((error) => {
-      logger.error({
-        logCode: 'livekit_audio_sel_group_sub_error',
-        extraInfo: {
-          errorMessage: error.message,
-          mediaType,
-        },
-      }, `LiveKit: ${mediaType} group streams subscription failed.`);
-    });
+  if (error) {
+    logger.error({
+      logCode: 'livekit_audio_sel_group_sub_error',
+      extraInfo: {
+        errorMessage: error.message,
+        mediaType,
+      },
+    }, `LiveKit: ${mediaType} group streams subscription failed.`);
   }
 
   return useMemo<MediaSendersData>(() => {

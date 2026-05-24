@@ -106,3 +106,20 @@ case class SetUserMediaGroupStateRespMsgBody(
     appliedState: Vector[MediaGroupEntry],
     errors:       Vector[MediaGroupEntryError]
 )
+
+/**
+ * Emitted whenever a user's membership in a media group is created,
+ * updated or removed. Consumed by bbb-graphql-middleware to feed the
+ * getUserMediaGroupStateStream streaming subscription.
+ */
+object UserMediaGroupStateEvtMsg { val NAME = "UserMediaGroupStateEvtMsg" }
+case class UserMediaGroupStateEvtMsg(header: BbbClientMsgHeader, body: UserMediaGroupStateEvtMsgBody) extends BbbCoreMsg
+case class UserMediaGroupStateEvtMsgBody(
+    userId:    String,
+    groupId:   String,
+    mediaType: String,
+    sender:    Boolean,
+    receiver:  Boolean,
+    active:    Boolean,
+    removed:   Boolean
+)

@@ -4,6 +4,7 @@ import org.bigbluebutton.common2.msgs._
 import org.bigbluebutton.core.models._
 import org.bigbluebutton.core.running.{ LiveMeeting, OutMsgRouter }
 import org.bigbluebutton.core.db.MediaGroupUserDAO
+import org.bigbluebutton.core2.message.senders.MsgBuilder
 
 // Reserved group IDs for the explicit public space per media type
 object PublicMediaGroupIds {
@@ -25,6 +26,27 @@ object PublicMediaGroupIds {
 }
 
 object MediaGroupApp {
+  // Emits a UserMediaGroupStateEvtMsg consumed by bbb-graphql-middleware to
+  // feed the getUserMediaGroupStateStream streaming subscription. Must be
+  // called after each MediaGroupUserDAO mutation so the middleware cache and
+  // active subscribers stay in sync.
+  def broadcastUserMediaGroupStateEvt(
+      meetingId: String,
+      userId:    String,
+      groupId:   String,
+      mediaType: String,
+      sender:    Boolean,
+      receiver:  Boolean,
+      active:    Boolean,
+      removed:   Boolean,
+      outGW:     OutMsgRouter
+  ): Unit = {
+    val event = MsgBuilder.buildUserMediaGroupStateEvtMsg(
+      meetingId, userId, groupId, mediaType, sender, receiver, active, removed
+    )
+    outGW.send(event)
+  }
+
   // Public groups are explicit and system-managed on meeting/user join, but
   // post-join membership transitions are declarative: handlers apply exactly
   // the requested operations and callers own any public-group restoration.
@@ -169,7 +191,8 @@ object MediaGroupApp {
   def enrollUserInPublicGroups(
       liveMeeting: LiveMeeting,
       userId:      String,
-      mediaGroups: MediaGroups
+      mediaGroups: MediaGroups,
+      outGW:       OutMsgRouter
   ): MediaGroups = {
     val participant = MediaGroupParticipant(
       userId,
@@ -200,6 +223,19 @@ object MediaGroupApp {
           receiver = true,
           active = true
         )
+        newMgState.find(groupId).foreach { mg =>
+          broadcastUserMediaGroupStateEvt(
+            liveMeeting.props.meetingProp.intId,
+            userId,
+            groupId,
+            mg.mediaType,
+            sender = true,
+            receiver = true,
+            active = true,
+            removed = false,
+            outGW
+          )
+        }
       }
     }
 
@@ -328,10 +364,14 @@ object MediaGroupApp {
     var affectedGroupIds = Set.empty[String]
     var updatedMediaGroups = mediaGroups
 
-    toRemove.foreach { case (groupId, _) =>
+    toRemove.foreach { case (groupId, entry) =>
       updatedMediaGroups = removeMediaGroupParticipant(groupId, userId, updatedMediaGroups)
       MediaGroupUserDAO.delete(meetingId, groupId, userId)
       affectedGroupIds += groupId
+      broadcastUserMediaGroupStateEvt(
+        meetingId, userId, groupId, entry.mediaType,
+        sender = false, receiver = false, active = false, removed = true, outGW
+      )
     }
 
     toAdd.foreach { case (groupId, entry) =>
@@ -339,6 +379,10 @@ object MediaGroupApp {
       updatedMediaGroups = addMediaGroupParticipant(groupId, participant, updatedMediaGroups)
       MediaGroupUserDAO.insertUser(meetingId, groupId, userId, entry.sender, entry.receiver, entry.active)
       affectedGroupIds += groupId
+      broadcastUserMediaGroupStateEvt(
+        meetingId, userId, groupId, entry.mediaType,
+        entry.sender, entry.receiver, entry.active, removed = false, outGW
+      )
     }
 
     toUpdate.foreach { case (groupId, entry) =>
@@ -346,6 +390,10 @@ object MediaGroupApp {
       updatedMediaGroups = updateMediaGroupParticipant(groupId, participant, updatedMediaGroups)
       MediaGroupUserDAO.update(meetingId, groupId, participant)
       affectedGroupIds += groupId
+      broadcastUserMediaGroupStateEvt(
+        meetingId, userId, groupId, entry.mediaType,
+        entry.sender, entry.receiver, entry.active, removed = false, outGW
+      )
     }
 
     // Public group enforcement: after removals, if the user has no
@@ -366,6 +414,10 @@ object MediaGroupApp {
             updatedMediaGroups = addMediaGroupParticipant(publicGroupId, participant, updatedMediaGroups)
             MediaGroupUserDAO.insertUser(meetingId, publicGroupId, userId, sender = true, receiver = true, active = true)
             affectedGroupIds += publicGroupId
+            broadcastUserMediaGroupStateEvt(
+              meetingId, userId, publicGroupId, mediaType,
+              sender = true, receiver = true, active = true, removed = false, outGW
+            )
           }
         }
       }

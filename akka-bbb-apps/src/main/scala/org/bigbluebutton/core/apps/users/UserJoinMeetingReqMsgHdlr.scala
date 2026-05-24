@@ -53,7 +53,7 @@ trait UserJoinMeetingReqMsgHdlr extends HandlerHelpers {
 
     // Enroll user in public media groups
     newState = newState.update(
-      MediaGroupApp.enrollUserInPublicGroups(liveMeeting, regUser.id, newState.mediaGroups)
+      MediaGroupApp.enrollUserInPublicGroups(liveMeeting, regUser.id, newState.mediaGroups, outGW)
     )
     updateParentMeetingWithNewListOfUsers()
     notifyPreviousUsersWithSameExtId(regUser)

@@ -57,9 +57,7 @@ import { Layout } from '/imports/ui/components/layout/layoutTypes';
 import { LAYOUT_TYPE } from '/imports/ui/components/layout/enums';
 import createUseSubscription from '/imports/ui/core/hooks/createUseSubscription';
 import { filterByMeetingId } from '/imports/ui/core/utils/subscriptionFilters';
-import {
-  MEDIA_GROUP_STREAMS_SUBSCRIPTION,
-} from '/imports/ui/components/livekit/selective-subscription/queries';
+import useUserMediaGroupStateStream from '/imports/ui/components/livekit/selective-subscription/mediaGroupStateStream';
 import {
   MediaGroupParticipant,
   MediaType,
@@ -428,12 +426,6 @@ const useAudioOnlySubscription = createUseSubscription(
   true,
 );
 
-const useMediaGroupStreamsSubscription = createUseSubscription(
-  MEDIA_GROUP_STREAMS_SUBSCRIPTION,
-  {},
-  true,
-);
-
 export const useAudioOnlyUsers = (): AudioOnlyStream[] => {
   const { data: meeting } = useMeeting((m) => ({ meetingId: m.meetingId }));
   const { data, loading, errors } = useAudioOnlySubscription();
@@ -485,18 +477,16 @@ export const useAudioOnlyUsers = (): AudioOnlyStream[] => {
 };
 
 const useVideoSenders = () => {
-  const { data, errors } = useMediaGroupStreamsSubscription();
+  const { data, error } = useUserMediaGroupStateStream();
 
-  if (errors) {
-    errors.forEach((error) => {
-      logger.error({
-        logCode: 'video_provider_media_group_sub_error',
-        extraInfo: {
-          errorMessage: error.message,
-          mediaType: MediaType.CAMERA,
-        },
-      }, `VideoProvider: ${MediaType.CAMERA} group participants subscription failed.`);
-    });
+  if (error) {
+    logger.error({
+      logCode: 'video_provider_media_group_sub_error',
+      extraInfo: {
+        errorMessage: error.message,
+        mediaType: MediaType.CAMERA,
+      },
+    }, `VideoProvider: ${MediaType.CAMERA} group participants subscription failed.`);
   }
 
   const mediaGroupParticipants = (data as MediaGroupParticipant[] || []).filter(

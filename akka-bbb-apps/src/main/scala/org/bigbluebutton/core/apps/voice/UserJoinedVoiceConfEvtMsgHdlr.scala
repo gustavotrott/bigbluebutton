@@ -145,7 +145,7 @@ trait UserJoinedVoiceConfEvtMsgHdlr extends SystemConfiguration with HandlerHelp
       // in UserJoinMeetingReqMsgHdlr
       if (isDialInUser) {
         state.update(
-          MediaGroupApp.enrollUserInPublicGroups(liveMeeting, msg.body.intId, state.mediaGroups)
+          MediaGroupApp.enrollUserInPublicGroups(liveMeeting, msg.body.intId, state.mediaGroups, outGW)
         )
       } else {
         state

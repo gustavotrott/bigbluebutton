@@ -47,6 +47,14 @@ trait DestroyMediaGroupReqMsgHdlr extends RightsManagementTrait {
           } else {
             val updatedGroups = MediaGroupApp.deleteMediaGroup(groupId, state.mediaGroups)
             broadcastEvent(mg)
+            mg.findAllParticipants().foreach { p =>
+              MediaGroupApp.broadcastUserMediaGroupStateEvt(
+                liveMeeting.props.meetingProp.intId,
+                p.userId, mg.id, mg.mediaType,
+                sender = false, receiver = false, active = false,
+                removed = true, bus.outGW
+              )
+            }
             MediaGroupUserDAO.deleteAll(liveMeeting.props.meetingProp.intId, groupId)
             MediaGroupDAO.delete(liveMeeting.props.meetingProp.intId, groupId)
             state.update(updatedGroups)

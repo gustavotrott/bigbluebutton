@@ -38,6 +38,7 @@ var allowedMessages = []string{
 	"GroupChatMessageBroadcastEvtMsg",
 	"ModifyWhiteboardAccessEvtMsg",
 	"UserVoiceStateEvtMsg",
+	"UserMediaGroupStateEvtMsg",
 	"UserLeftMeetingEvtMsg",
 	"MeetingEndedEvtMsg",
 }
@@ -108,6 +109,7 @@ func StartRedisListener() {
 			log.Debugf("Removing cursor positions for meeting: %s", receivedMessage.Core.Body["meetingId"].(string))
 			go streamingserver.RemoveMeetingCursorsCache(receivedMessage.Core.Body["meetingId"].(string))
 			go streamingserver.RemoveMeetingUserVoiceStatesCache(receivedMessage.Core.Body["meetingId"].(string))
+			go streamingserver.RemoveMeetingUserMediaGroupStatesCache(receivedMessage.Core.Body["meetingId"].(string))
 			go common.RemoveMeetingHasuraMessageCache(receivedMessage.Core.Body["meetingId"].(string))
 			go common.RemoveMeetingPatchedMessageCache(receivedMessage.Core.Body["meetingId"].(string))
 			go common.RemoveMeetingStreamCursorValueCache(receivedMessage.Core.Body["meetingId"].(string))
@@ -115,6 +117,12 @@ func StartRedisListener() {
 		if messageName == "UserLeftMeetingEvtMsg" {
 			log.Debugf("Removing cursor positions for meeting: %s, user: %s", receivedMessage.Core.Header.MeetingId, receivedMessage.Core.Header.UserId)
 			go streamingserver.RemoveUserCursorsCache(receivedMessage.Core.Header.MeetingId, receivedMessage.Core.Header.UserId)
+			go streamingserver.BroadcastRemoveAndClearUserMediaGroupCache(
+				receivedMessage.Core.Header.MeetingId,
+				receivedMessage.Core.Header.UserId,
+				BrowserConnectionsMutex,
+				BrowserConnections,
+			)
 		}
 
 		if messageName == "SendCursorPositionEvtMsg" {
@@ -159,6 +167,14 @@ func StartRedisListener() {
 
 		if messageName == "UserVoiceStateEvtMsg" {
 			go streamingserver.HandleUserVoiceStateEvtMsg(
+				receivedMessage,
+				BrowserConnectionsMutex,
+				BrowserConnections,
+			)
+		}
+
+		if messageName == "UserMediaGroupStateEvtMsg" {
+			go streamingserver.HandleUserMediaGroupStateEvtMsg(
 				receivedMessage,
 				BrowserConnectionsMutex,
 				BrowserConnections,

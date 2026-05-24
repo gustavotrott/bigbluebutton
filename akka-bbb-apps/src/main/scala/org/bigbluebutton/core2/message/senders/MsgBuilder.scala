@@ -724,6 +724,24 @@ object MsgBuilder {
     BbbCommonEnvCoreMsg(envelope, event)
   }
 
+  def buildUserMediaGroupStateEvtMsg(
+                                      meetingId: String,
+                                      userId:    String,
+                                      groupId:   String,
+                                      mediaType: String,
+                                      sender:    Boolean,
+                                      receiver:  Boolean,
+                                      active:    Boolean,
+                                      removed:   Boolean
+                                    ): BbbCommonEnvCoreMsg = {
+    val routing = Routing.addMsgToClientRouting(MessageTypes.BROADCAST_TO_MEETING, meetingId, userId)
+    val envelope = BbbCoreEnvelope(UserMediaGroupStateEvtMsg.NAME, routing)
+    val header = BbbClientMsgHeader(UserMediaGroupStateEvtMsg.NAME, meetingId, userId)
+    val body = UserMediaGroupStateEvtMsgBody(userId, groupId, mediaType, sender, receiver, active, removed)
+    val event = UserMediaGroupStateEvtMsg(header, body)
+    BbbCommonEnvCoreMsg(envelope, event)
+  }
+
   def buildUserLeftVoiceConfToClientEvtMsg(
     meetingId: String,
     userId: String,

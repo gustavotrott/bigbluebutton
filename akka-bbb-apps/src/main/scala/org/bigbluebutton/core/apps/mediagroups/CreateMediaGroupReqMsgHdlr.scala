@@ -57,13 +57,26 @@ trait CreateMediaGroupReqMsgHdlr extends RightsManagementTrait {
       def insertParticipants(
           senders:   Vector[MediaGroupParticipant],
           receivers: Vector[MediaGroupParticipant],
-          mgId:      String
+          mgId:      String,
+          mediaType: String
       ): Unit = {
         senders.foreach { sender =>
           MediaGroupUserDAO.insert(liveMeeting.props.meetingProp.intId, mgId, sender)
+          MediaGroupApp.broadcastUserMediaGroupStateEvt(
+            liveMeeting.props.meetingProp.intId,
+            sender.userId, mgId, mediaType,
+            sender.sender, sender.receiver, sender.active,
+            removed = false, bus.outGW
+          )
         }
         receivers.foreach { receiver =>
           MediaGroupUserDAO.insert(liveMeeting.props.meetingProp.intId, mgId, receiver)
+          MediaGroupApp.broadcastUserMediaGroupStateEvt(
+            liveMeeting.props.meetingProp.intId,
+            receiver.userId, mgId, mediaType,
+            receiver.sender, receiver.receiver, receiver.active,
+            removed = false, bus.outGW
+          )
         }
       }
 
@@ -77,7 +90,7 @@ trait CreateMediaGroupReqMsgHdlr extends RightsManagementTrait {
             state.mediaGroups
           )
 
-          insertParticipants(senders, receivers, mg.id)
+          insertParticipants(senders, receivers, mg.id, mg.mediaType)
           val newState = state.update(updatedGroups)
           MediaGroupApp.handleMediaGroupUpdated(mg.id, updatedGroups, liveMeeting, bus.outGW)
           newState
@@ -95,7 +108,7 @@ trait CreateMediaGroupReqMsgHdlr extends RightsManagementTrait {
           val updatedGroups = MediaGroupApp.addMediaGroup(mg, state.mediaGroups)
           broadcastEvent(mg)
           MediaGroupDAO.insert(liveMeeting.props.meetingProp.intId, mg)
-          insertParticipants(senders, receivers, mg.id)
+          insertParticipants(senders, receivers, mg.id, mg.mediaType)
           state.update(updatedGroups)
       }
     }
