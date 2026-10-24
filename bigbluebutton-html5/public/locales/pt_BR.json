@@ -213,6 +213,8 @@
     "app.profileSettings.usernameTitle": "Nome",
     "app.profileSettings.statusTitle": "Status",
     "app.profileSettings.addExtraCamera": "Adicionar câmera extra",
+    "app.profileSettings.enableWebcam": "Habilitar webcam",
+    "app.profileSettings.enableWebcamHint": "Habilite sua webcam para ver a prévia e compartilhá-la. Só você vê a prévia.",
     "app.user.activityCheck": "Verificação de atividade do usuário",
     "app.user.activityCheck.label": "Verifica se o usuário ainda está na sessão ({responseDelay})",
     "app.user.activityCheck.check": "Verificar",

@@ -21,6 +21,10 @@ import type { Stream, StreamItem, VideoItem } from './types';
 import { VIDEO_TYPES } from './enums';
 import BBBVideoStream from '/imports/ui/services/webrtc-base/bbb-video-stream';
 import {
+  EFFECT_TYPES,
+  getSessionVirtualBackgroundInfo,
+} from '/imports/ui/services/virtual-background/service';
+import {
   liveKitRoomRegistry,
   lkToggleMuteCameras,
 } from '/imports/ui/services/livekit';
@@ -229,11 +233,20 @@ class VideoService {
     return this.record;
   }
 
-  static mirrorOwnWebcam(userId: string | null = null) {
+  static mirrorOwnWebcam(userId: string | null = null, virtualBgType: string | null = null) {
     const MIRROR_WEBCAM = window.meetingClientSettings.public.app.mirrorOwnWebcam;
     const isOwnWebcam = userId ? Auth.userID === userId : true;
     const isEnabledMirroring = getFromUserSettings('bbb_mirror_own_webcam', MIRROR_WEBCAM);
-    return isOwnWebcam && isEnabledMirroring;
+    // An image background (e.g. one with a logo or text) would read backwards in a
+    // mirrored self view, so the self view is shown as others see it while one is on.
+    const hasImageBackground = virtualBgType === EFFECT_TYPES.IMAGE_TYPE;
+    return isOwnWebcam && isEnabledMirroring && !hasImageBackground;
+  }
+
+  static getVirtualBgType(deviceId: string | null | undefined): string | null {
+    if (!deviceId) return null;
+    const info = getSessionVirtualBackgroundInfo(deviceId) as { type?: string } | null;
+    return info?.type ?? null;
   }
 
   static isPinEnabled() {
@@ -619,6 +632,7 @@ export default {
   isLocalStream: videoService.isLocalStream.bind(videoService),
   isPaginationEnabled: VideoService.isPaginationEnabled,
   mirrorOwnWebcam: VideoService.mirrorOwnWebcam,
+  getVirtualBgType: VideoService.getVirtualBgType,
   processInboundIceQueue: VideoService.processInboundIceQueue,
   storeDeviceIds: videoService.storeDeviceIds.bind(videoService),
   joinedVideo: () => VideoService.joinedVideo(),

@@ -4,6 +4,8 @@ import { defineMessages, useIntl } from 'react-intl';
 import { UserCameraHelperButton } from 'bigbluebutton-html-plugin-sdk';
 import { UpdatedDataForUserCameraDomElement } from 'bigbluebutton-html-plugin-sdk/dist/cjs/dom-element-manipulation/user-camera/types';
 import Session from '/imports/ui/services/storage/in-memory';
+import { getStorageSingletonInstance } from '/imports/ui/services/storage';
+import type { StorageData } from '/imports/ui/services/storage/observable';
 import UserActions from '/imports/ui/components/video-provider/video-list/video-list-item/user-actions/component';
 import UserStatus from '/imports/ui/components/video-provider/video-list/video-list-item/user-status/component';
 import PinArea from '/imports/ui/components/video-provider/video-list/video-list-item/pin-area/component';
@@ -205,7 +207,15 @@ const VideoListItem: React.FC<VideoListItemProps> = (props) => {
 
   const [videoDataLoaded, setVideoDataLoaded] = useState(false);
   const [isStreamHealthy, setIsStreamHealthy] = useState(false);
-  const [isMirrored, setIsMirrored] = useState<boolean>(VideoService.mirrorOwnWebcam(stream.userId));
+  const ownDeviceId = stream.type === VIDEO_TYPES.STREAM && stream.userId === Auth.userID
+    ? stream.deviceId
+    : null;
+  const [virtualBgType, setVirtualBgType] = useState<string | null>(
+    VideoService.getVirtualBgType(ownDeviceId),
+  );
+  const [isMirrored, setIsMirrored] = useState<boolean>(
+    VideoService.mirrorOwnWebcam(stream.userId, virtualBgType),
+  );
   const [isVideoSqueezed, setIsVideoSqueezed] = useState(false);
   const [isVideoPluginHelperSqueezed, setIsVideoPluginHelperSqueezed] = useState(false);
   const [isSelfViewDisabled, setIsSelfViewDisabled] = useState(false);
@@ -226,6 +236,22 @@ const VideoListItem: React.FC<VideoListItemProps> = (props) => {
       return userCamera;
     });
   }, [videoContainer]);
+
+  // The background can be swapped mid-call from the camera settings
+  useEffect(() => {
+    if (!ownDeviceId) return undefined;
+    const storage = getStorageSingletonInstance();
+    const key = `VirtualBackgroundInfo_${ownDeviceId}`;
+    const observer = (info: StorageData) => {
+      setVirtualBgType((info as { type?: string } | null)?.type ?? null);
+    };
+    storage.registerObserver(key, observer);
+    return () => storage.revokeObserver(key, observer);
+  }, [ownDeviceId]);
+
+  useEffect(() => {
+    setIsMirrored(VideoService.mirrorOwnWebcam(stream.userId, virtualBgType));
+  }, [virtualBgType]);
 
   const videoIsReady = isStreamHealthy && videoDataLoaded && !isSelfViewDisabled;
   const voiceUser = stream.type !== VIDEO_TYPES.CONNECTING ? stream.voice : undefined;

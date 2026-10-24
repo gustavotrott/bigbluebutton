@@ -227,6 +227,10 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
 
   const [cameraSections, setCameraSections] = React.useState<CameraSection[]>([]);
   const [activePreviewIndex, setActivePreviewIndex] = React.useState(0);
+  const isPreviewMirrored = VideoService.mirrorOwnWebcam(
+    null,
+    cameraSections[activePreviewIndex]?.virtualBackground?.type ?? null,
+  );
   const prevSharedDevices = usePreviousValue(sharedDevices);
   const { hideNotificationToasts } = layoutSelectInput((i: Input) => i.notificationsBar);
   const hideNotifications = hideNotificationToasts || getFromUserSettings('bbb_hide_notifications', false);
@@ -660,9 +664,9 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
                           )
                           : (
                             <Styled.VideoPreview
-                              mirroredVideo={VideoService.mirrorOwnWebcam()}
+                              mirroredVideo={isPreviewMirrored}
                               id="preview"
-                              data-test={VideoService.mirrorOwnWebcam() ? 'mirroredVideoPreview' : 'videoPreview'}
+                              data-test={isPreviewMirrored ? 'mirroredVideoPreview' : 'videoPreview'}
                               ref={videoRef}
                               autoPlay
                               playsInline
@@ -969,7 +973,16 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
       )}
       <Styled.Separator />
       <Styled.SaveButtonContainer>
-        {isCameraAlreadyShared ? (
+        {isAwaitingCameraPermission && (
+          // Sharing needs the preview stream, so enable the webcam first
+          <Styled.SaveButton
+            color="primary"
+            label={formatMessage(intlMessages.enableWebcamLabel)}
+            onClick={startPreview}
+            data-test="enableWebcamFooterButton"
+          />
+        )}
+        {!isAwaitingCameraPermission && isCameraAlreadyShared && (
           <Styled.SaveButton
             color="danger"
             label={formatMessage(intlMessages.leaveVideoLabel)}
@@ -979,15 +992,8 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
             )}
             data-test="stopSharingProfileSettings"
           />
-        ) : isAwaitingCameraPermission ? (
-          // Sharing needs the preview stream, so enable the webcam first
-          <Styled.SaveButton
-            color="primary"
-            label={formatMessage(intlMessages.enableWebcamLabel)}
-            onClick={startPreview}
-            data-test="enableWebcamFooterButton"
-          />
-        ) : (
+        )}
+        {!isAwaitingCameraPermission && !isCameraAlreadyShared && (
           <Styled.SaveButton
             disabled={isCameraLoading || !!(deviceError || previewError)}
             color="primary"

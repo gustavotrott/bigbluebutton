@@ -528,9 +528,9 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({
                 <div>{previewError}</div>
               ) : (
                 <Styled.VideoPreview
-                  mirroredVideo={VideoService.mirrorOwnWebcam()}
+                  mirroredVideo={VideoService.mirrorOwnWebcam(null, currentVideoStream.current?.virtualBgType ?? null)}
                   id="preview"
-                  data-test={VideoService.mirrorOwnWebcam() ? 'mirroredVideoPreview' : 'videoPreview'}
+                  data-test={VideoService.mirrorOwnWebcam(null, currentVideoStream.current?.virtualBgType ?? null) ? 'mirroredVideoPreview' : 'videoPreview'}
                   ref={videoRef}
                   autoPlay
                   playsInline
