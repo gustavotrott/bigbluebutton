@@ -377,7 +377,7 @@ These changes apply to the client configuration file (`/etc/bigbluebutton/bbb-ht
 #### Added
 
 - `public.kurento.pagination.gridEnabled` (default `true`) - whether the camera-less avatar grid (the "webcam grid") is shown while the presentation is minimized. The grid can also be disabled per meeting with `disabledFeatures=webcamGrid`.
-- `public.kurento.preventUnexpectedCameraPermissionPrompt` (default `false`) - when the browser hasn't granted camera access yet, the Profile panel shows a "Show camera preview" button instead of prompting for camera access as soon as it's opened. The camera is opened, and access requested, only after the user clicks it.
+- `public.kurento.userProfileEagerCameraPrompt` (default `true`) - whether the Profile panel opens the camera, prompting for camera access, as soon as it's opened. When `false` and the browser hasn't granted camera access yet, the panel shows a "Show camera preview" button instead. The camera is opened, and access requested, only after the user clicks it.
 - `public.multiFunctionalMode.enabled` (default `false`) - enables the auxiliary/dual sidebar content panel.
 - `public.userList.searchBar.enabled` (default `true`) - enables the user list search field.
 - `public.app.appsGallery.maxPinnedApps` (default `3`) - maximum number of apps a user can pin in the Apps Gallery.
