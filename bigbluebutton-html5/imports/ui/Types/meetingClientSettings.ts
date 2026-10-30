@@ -129,6 +129,7 @@ export interface AudioCaptions {
   enabled: boolean
   mobile: boolean
   provider: string
+  speechProcessing: 'cloud' | 'local' | 'auto'
   showInSidebarNavigation: boolean
   microphoneAlert: MicrophoneAlert
   language: Language
@@ -416,9 +417,9 @@ export interface CameraProfile {
 }
 
 export interface Constraints2 {
-  width: number
-  height: number
-  frameRate?: number
+  width?: ConstrainULong
+  height?: ConstrainULong
+  frameRate?: ConstrainDouble
 }
 
 export interface CameraSortingModes {
@@ -444,6 +445,7 @@ export interface Threshold {
 
 export interface Pagination {
   paginationToggleEnabled: boolean
+  paginationToggleModeratorOnly?: boolean
   pageChangeDebounceTime: number
   desktopPageSizes: DesktopPageSizes
   mobilePageSizes: MobilePageSizes
@@ -677,10 +679,20 @@ export interface LiveKitAudioSettings {
   useLiveKitAudioState?: boolean
 }
 
+export type LastNAudioConfig = {
+  enabled: boolean;
+  audibleSize: number;
+  standbySize: number;
+  speechHoldMs: number;
+  minAudibleMs: number;
+  standbyGraceMs: number;
+};
+
 export type SelectiveSubscriptionConfig = {
   enabled: boolean;
   audioSubscriptionPoolSize: number;
   muteDebounceMs: number;
+  lastN?: LastNAudioConfig;
 };
 
 export interface LiveKitSettings {

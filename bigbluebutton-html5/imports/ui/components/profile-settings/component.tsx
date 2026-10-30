@@ -112,6 +112,10 @@ const intlMessages: { [key: string]: { id: string; description?: string } } = de
     id: 'app.video.leaveVideo',
     description: 'Leave Video Label',
   },
+  videoLockedLabel: {
+    id: 'app.video.videoLocked',
+    description: 'Label shown when webcam sharing is locked',
+  },
   addExtraCameraLabel: {
     id: 'app.profileSettings.addExtraCamera',
     description: 'Add Extra Camera Button Label',
@@ -214,6 +218,11 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
   const { formatMessage } = useIntl();
   const sharedDevices = useSharedDevices();
   const isCamLocked = useIsCamSharingLocked();
+  const { data: currentUserData } = useCurrentUser((user) => ({
+    name: user.name,
+    away: user.away,
+    voice: user.voice,
+  }));
   const stopVideo = useStopVideo();
   const streams = useStreams();
   const isVirtualBackgroundsEnabled = useIsVirtualBackgroundsEnabled();
@@ -270,6 +279,8 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
     forceOpen: true,
     // A shared webcam means access was already granted, no need to wait for it
     waitForCameraPermission: !userProfileEagerCameraPrompt && sharedDevices.length === 0,
+    // The lock state isn't known until the current user is loaded
+    cameraDisabled: isCamLocked || !currentUserData,
   });
 
   const prevWebcamDeviceId = usePreviousValue(webcamDeviceId);
@@ -355,12 +366,6 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
       setActivePreviewIndex(newActiveIndex);
     }
   }, [webcamDeviceId, cameraSections, isCameraLoading]);
-
-  const { data: currentUserData } = useCurrentUser((user) => ({
-    name: user.name,
-    away: user.away,
-    inAudio: user.voice,
-  }));
 
   const voiceToggle = useToggleVoice();
   const { data: unmuted } = useWhoIsUnmuted(Auth.userID as string);
@@ -604,6 +609,8 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
 
     // Opening the panel shouldn't prompt for camera access, which would look like the
     // webcam is about to be shared. Let the user ask for the preview instead.
+    if (isCamLocked) return null;
+
     if (isAwaitingCameraPermission) {
       return (
         <Styled.VideoPreviewContainer>
@@ -897,8 +904,8 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
         <Styled.DevicesSettingsContainer>
           <AudioSelectors inAudio={!!currentUserData?.voice} />
         </Styled.DevicesSettingsContainer>
-        {!isAwaitingCameraPermission && <Styled.Separator />}
-        {!isAwaitingCameraPermission && cameraSections.map((section: CameraSection, sectionIndex) => {
+        {!isCamLocked && !isAwaitingCameraPermission && <Styled.Separator />}
+        {!isCamLocked && !isAwaitingCameraPermission && cameraSections.map((section: CameraSection, sectionIndex) => {
           const usedDeviceIds = cameraSections
             .map((s) => s.deviceId)
             .filter((id) => id !== section.deviceId);
@@ -956,7 +963,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
           );
         })}
       </Styled.ProfileSettings>
-      {!isAwaitingCameraPermission && availableWebcams && availableWebcams.length > 1 && (
+      {!isCamLocked && !isAwaitingCameraPermission && availableWebcams && availableWebcams.length > 1 && (
       <>
         <Styled.Separator />
         <Styled.AddCameraContainer>
@@ -973,16 +980,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
       )}
       <Styled.Separator />
       <Styled.SaveButtonContainer>
-        {isAwaitingCameraPermission && (
-          // Sharing needs the preview stream, so enable the webcam first
-          <Styled.SaveButton
-            color="primary"
-            label={formatMessage(intlMessages.enableWebcamLabel)}
-            onClick={startPreview}
-            data-test="enableWebcamFooterButton"
-          />
-        )}
-        {!isAwaitingCameraPermission && isCameraAlreadyShared && (
+        {isCameraAlreadyShared && (
           <Styled.SaveButton
             color="danger"
             label={formatMessage(intlMessages.leaveVideoLabel)}
@@ -993,11 +991,20 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = () => {
             data-test="stopSharingProfileSettings"
           />
         )}
-        {!isAwaitingCameraPermission && !isCameraAlreadyShared && (
+        {!isCameraAlreadyShared && !isCamLocked && isAwaitingCameraPermission && (
+          // Sharing needs the preview stream, so enable the webcam first
           <Styled.SaveButton
-            disabled={isCameraLoading || !!(deviceError || previewError)}
             color="primary"
-            label={formatMessage(intlMessages.joinVideoLabel)}
+            label={formatMessage(intlMessages.enableWebcamLabel)}
+            onClick={startPreview}
+            data-test="enableWebcamFooterButton"
+          />
+        )}
+        {!isCameraAlreadyShared && (isCamLocked || !isAwaitingCameraPermission) && (
+          <Styled.SaveButton
+            disabled={isCamLocked || isCameraLoading || !!(deviceError || previewError)}
+            color="primary"
+            label={formatMessage(isCamLocked ? intlMessages.videoLockedLabel : intlMessages.joinVideoLabel)}
             onClick={handleShareWebcams}
             data-test="saveProfileSettings"
           />
