@@ -10,11 +10,22 @@ import {
 } from '/imports/ui/stylesheets/styled-components/palette';
 import Button from '/imports/ui/components/common/button/component';
 
+// Apple's Human Interface Guidelines minimum hit target for touch screens.
+// In px, not rem: a touch target must not shrink with the user's font size.
+const MIN_TOUCH_TARGET = '44px';
+
 const ActionsBar = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
   height: 100%;
+
+  @media (pointer: coarse) {
+    .bbb-button--circle > .bbb-button__icon {
+      min-width: ${MIN_TOUCH_TARGET};
+      min-height: ${MIN_TOUCH_TARGET};
+    }
+  }
 `;
 
 const ActionsBarWrapper = styled.section`
@@ -91,6 +102,10 @@ const PresentationButtonsWrapper = styled.div`
       margin-left: 0;
       margin-right: ${smPaddingX};
     }
+  }
+
+  @media (pointer: coarse) {
+    min-height: ${MIN_TOUCH_TARGET};
   }
 `;
 

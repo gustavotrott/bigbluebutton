@@ -54,6 +54,15 @@ const Input = styled(TextareaAutosize)`
   font-size: ${fontSizeBase};
   line-height: 1;
   overflow-y: auto;
+
+  /*
+   * iOS zooms the page into any focused field whose font is under 16px (e.g.
+   * when the user picks a smaller font size in Settings). Keep the chat input
+   * at 16px or more on touch screens so tapping it doesn't zoom the client.
+   */
+  @media (pointer: coarse) {
+    font-size: max(${fontSizeBase}, 16px);
+  }
   white-space: pre-wrap;
   border: ${colorBorder};
   box-shadow: none;
