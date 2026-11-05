@@ -97,6 +97,7 @@ export interface App {
   enableCopyNetworkStatsButton: boolean
   userSettingsStorage: 'local' | 'session'
   defaultSettings: DefaultSettings
+  showShortcutsInTooltips: boolean
   shortcuts: Shortcuts
   branding: Branding
   connectionTimeout: number
