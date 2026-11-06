@@ -14,6 +14,11 @@ const intlMessages = defineMessages({
   },
 });
 
+// A plugin replacing its gallery items unregisters the old ones before it
+// registers the new ones, so the registry can be empty for a moment. The open
+// gallery is only closed if it stays empty for this long.
+const CLOSE_EMPTY_GALLERY_DELAY = 1000; // ms
+
 const AppsListItem: React.FC = () => {
   const intl = useIntl();
   const isOpened = useIsSpecificPanelOpened(PANELS.APPS_GALLERY);
@@ -28,8 +33,10 @@ const AppsListItem: React.FC = () => {
   useEffect(() => {
     // Close the gallery if its last app went away while it was open
     // (e.g. the user lost presenter/moderator role).
-    if (!hasApps && isOpened) closePanel();
-  }, [hasApps, isOpened]);
+    if (hasApps || !isOpened) return undefined;
+    const timer = setTimeout(closePanel, CLOSE_EMPTY_GALLERY_DELAY);
+    return () => clearTimeout(timer);
+  }, [hasApps, isOpened, closePanel]);
 
   if (!hasApps) return null;
 
