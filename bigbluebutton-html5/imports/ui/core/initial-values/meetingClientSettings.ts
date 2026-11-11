@@ -51,11 +51,8 @@ export const meetingClientSettingsInitialValues: MeetingClientSettings = {
       },
       allowDefaultLogoutUrl: true,
       skipMeetingEnded: false,
-      dynamicGuestPolicy: true,
       enableGuestLobbyMessage: true,
       showGuestLobbyWaitingQueuePosition: true,
-      guestPolicyExtraAllowOptions: false,
-      alwaysShowWaitingRoomUI: true,
       enableLimitOfViewersInWebcam: false,
       enableMultipleCameras: true,
       enableCameraAsContent: true,
@@ -131,7 +128,6 @@ export const meetingClientSettingsInitialValues: MeetingClientSettings = {
       },
       emojiRain: {
         enabled: false,
-        intervalEmojis: 2000,
         numberOfEmojis: 5,
         emojiSize: 2,
       },
@@ -139,10 +135,6 @@ export const meetingClientSettingsInitialValues: MeetingClientSettings = {
       enableCopyNetworkStatsButton: true,
       userSettingsStorage: 'session',
       defaultSettings: {
-        layout: {
-          selectedLayout: 'unified',
-          pushLayout: false,
-        },
         application: {
           animations: true,
           chatAudioAlerts: false,
@@ -655,6 +647,7 @@ export const meetingClientSettingsInitialValues: MeetingClientSettings = {
         audioWasmProcessing: {
           enabled: false,
           provider: 'bbba',
+          intensity: 95,
           constraints: {
             echoCancellation: true,
             autoGainControl: true,
@@ -692,6 +685,7 @@ export const meetingClientSettingsInitialValues: MeetingClientSettings = {
       muteAudioOutputWhenAway: false,
       screenshare: {
         showButtonForNonPresenters: false,
+        enableOnMobile: false,
       },
       livekit: {
         url: `wss://${window.location.hostname}/livekit`,
@@ -766,7 +760,6 @@ export const meetingClientSettingsInitialValues: MeetingClientSettings = {
         'danger',
         'critical',
       ],
-      help: 'STATS_HELP_URL',
     },
     presentation: {
       allowDownloadOriginal: true,
