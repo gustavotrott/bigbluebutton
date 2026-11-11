@@ -5,7 +5,6 @@ import { defineMessages, useIntl } from 'react-intl';
 import { isEqual } from 'radash';
 import logger from '/imports/startup/client/logger';
 import deviceInfo from '/imports/utils/deviceInfo';
-import getFromUserSettings from '/imports/ui/services/users-settings';
 import PreviewService from '../service';
 import VideoService from '/imports/ui/components/video-provider/service';
 import { notify } from '/imports/ui/services/notification';
@@ -274,15 +273,9 @@ export const useVideoPreview = ({
     // freshly captured stream is only attached once its capture has settled; a
     // stream that was already running (e.g. the shared camera) is attached now.
     const capturedAt = freshCaptureTimes.current.get(stream);
-    // TEMP DIAGNOSTICS (PR 26433): userdata-bbb_ios_preview_settle_ms overrides the wait, 0 disables it
-    const settleTime = Number(getFromUserSettings('bbb_ios_preview_settle_ms', IOS_CAPTURE_SETTLE_TIME));
     const settleWait = deviceInfo.isIos && capturedAt
-      ? capturedAt + settleTime - Date.now()
+      ? capturedAt + IOS_CAPTURE_SETTLE_TIME - Date.now()
       : 0;
-    logger.info({
-      logCode: 'video_preview_ios_settle_diag',
-      extraInfo: { isIos: deviceInfo.isIos, fresh: !!capturedAt, settleTime, settleWait },
-    }, `iOS preview settle diagnostics: wait ${settleWait} ms`);
     if (settleWait > 0) {
       previewAttachTimer.current = setTimeout(() => {
         previewAttachTimer.current = null;
