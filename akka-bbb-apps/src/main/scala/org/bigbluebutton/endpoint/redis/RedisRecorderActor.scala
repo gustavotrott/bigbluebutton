@@ -413,6 +413,9 @@ class RedisRecorderActor(
     ev.setExternalUserId(msg.body.extId)
     ev.setName(msg.body.name)
     ev.setRole(msg.body.role)
+    if (msg.body.avatar != null && msg.body.avatar.nonEmpty) {
+      ev.setAvatarUrl(msg.body.avatar)
+    }
     ev.setUserdata(msg.body.userMetadata)
 
     record(msg.header.meetingId, ev.toMap.asJava)
