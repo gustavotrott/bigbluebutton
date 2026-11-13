@@ -47,6 +47,14 @@ class ParticipantJoinRecordEvent extends AbstractParticipantRecordEvent {
     eventMap.put(ROLE, role)
   }
 
+  /**
+   * Sets the URL of the picture of the user, when the join request provided one
+   * @param avatarUrl
+   */
+  def setAvatarUrl(avatarUrl: String) {
+    eventMap.put(AVATAR_URL, avatarUrl)
+  }
+
   def setUserdata(userMetadata: Map[String, String]): Unit = {
     eventMap.put(USER_DATA, userMetadata.toJson.compactPrint)
   }
@@ -57,6 +65,7 @@ object ParticipantJoinRecordEvent {
   protected final val EXT_USER_ID = "externalUserId"
   protected final val NAME = "name"
   protected final val ROLE = "role"
+  protected final val AVATAR_URL = "avatarURL"
   protected final val USER_DATA = "userdata"
 }
 
