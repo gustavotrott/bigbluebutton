@@ -351,6 +351,9 @@ presets:
       # A user who is back within this many seconds (connection lost, page reloaded) is not shown
       # as leaving and joining in the session activity
       rejoin_grace: 120
+      # Lines of names in the entry of who was in the meeting when the recording started; the
+      # names that do not fit are counted ("and 20 more")
+      present_lines: 8
       # Space left between the webcam tiles, in pixels
       tile_gap: 8
       # Who is speaking: one chip per person (picture or initials, and the name), right above the
@@ -368,6 +371,8 @@ presets:
                               # reactions and the pinned message; deleted messages are never shown
         poll: true            # results of a poll, when it is published
         external_video: true  # an external video was started (shows the URL)
+        present: true         # who was already in the meeting when the recording started, in a single
+                              # entry (what happens before the recording starts is not shown)
         join: true            # a user joined the meeting
         leave: true           # a user left the meeting
         raise_hand: true      # a user raised their hand
