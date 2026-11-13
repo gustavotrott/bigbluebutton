@@ -290,9 +290,10 @@ presets:
     # keeps the ones of who spoke most recently and the overlay tells how many were left out.
     # Remove (or set to 0) to always show every webcam.
     max_webcams: 5
-    # The limit while the webcams have the whole picture for themselves (the layouts below in which
-    # every other area is hidden). Defaults to max_webcams.
-    max_webcams_alone: 12
+    # The limit while there is no content being shown (no presentation, screen sharing or camera as
+    # content), which is when the webcams have the whole picture for themselves: the layouts below
+    # in which every other area is hidden. Defaults to max_webcams.
+    max_webcams_without_content: 12
 
     layout:
       width: 1920
