@@ -190,7 +190,8 @@ video_edl = BigBlueButton::EDL::Video.merge(webcam_edl, deskshare_edl, presentat
 max_webcams = preset['max_webcams'].to_i
 max_webcams_without_content = preset.fetch('max_webcams_without_content', max_webcams).to_i
 if max_webcams.positive? || max_webcams_without_content.positive?
-  logger.info "Limiting the video to #{max_webcams} webcams at a time (#{max_webcams_without_content} when there is nothing else)"
+  logger.info "Limiting the video to #{max_webcams} webcams at a time, " \
+              "#{max_webcams_without_content} while there is no content"
   webcam_limit = lambda do |cut|
     cut_layout = BigBlueButton::EDL::Video.select_layout_for_cut(cut, layout, preset['layouts'])
     alone = cut_layout[:areas].all? { |area| area[:name] == :webcam || area[:hidden] }
