@@ -185,11 +185,18 @@ BigBlueButton::EDL::Video.dump(layout_edl)
 
 video_edl = BigBlueButton::EDL::Video.merge(webcam_edl, deskshare_edl, presentation_edl, layout_edl)
 
-# With many webcams shared at the same time, the preset can keep only the ones of who spoke most recently
+# With many webcams shared at the same time, the preset can keep only the ones of who spoke most recently.
+# More of them fit while the webcams have the picture for themselves, which has its own limit.
 max_webcams = preset['max_webcams'].to_i
-if max_webcams.positive?
-  logger.info "Limiting the video to #{max_webcams} webcams at a time"
-  video_edl = BigBlueButton::Events.edl_limit_webcams(video_edl, events, max_webcams)
+max_webcams_alone = preset.fetch('max_webcams_alone', max_webcams).to_i
+if max_webcams.positive? || max_webcams_alone.positive?
+  logger.info "Limiting the video to #{max_webcams} webcams at a time (#{max_webcams_alone} when there is nothing else)"
+  webcam_limit = lambda do |cut|
+    cut_layout = BigBlueButton::EDL::Video.select_layout_for_cut(cut, layout, preset['layouts'])
+    alone = cut_layout[:areas].all? { |area| area[:name] == :webcam || area[:hidden] }
+    alone ? max_webcams_alone : max_webcams
+  end
+  video_edl = BigBlueButton::Events.edl_limit_webcams(video_edl, events, webcam_limit)
 end
 
 # The context overlay (meeting name, who is speaking, session activity) is optional and configured per preset

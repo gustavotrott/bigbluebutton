@@ -288,8 +288,11 @@ presets:
   1080p-context:
     # At most this many webcams are shown at the same time. When more are being shared, the video
     # keeps the ones of who spoke most recently and the overlay tells how many were left out.
-    # Remove to always show every webcam.
+    # Remove (or set to 0) to always show every webcam.
     max_webcams: 5
+    # The limit while the webcams have the whole picture for themselves (the layouts below in which
+    # every other area is hidden). Defaults to max_webcams.
+    max_webcams_alone: 12
 
     layout:
       width: 1920
