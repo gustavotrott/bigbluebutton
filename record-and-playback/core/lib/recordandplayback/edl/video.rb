@@ -22,6 +22,7 @@ require 'set'
 require 'shellwords'
 
 require_relative 'media_utils'
+require_relative 'video/overlay_video_source'
 require_relative 'video/presentation_video_source'
 require_relative 'video/video_source_reader'
 require_relative 'video/video_source'
@@ -428,7 +429,8 @@ module BigBlueButton
         layouts ||= []
         layout_name = 'default'
 
-        media = Set.new(cut[:areas].filter_map { |name, videos| name unless videos.empty? })
+        # The overlay covers the whole frame, it is not a media type that layouts have to make room for
+        media = Set.new(cut[:areas].filter_map { |name, videos| name unless videos.empty? || name == :overlay })
         BigBlueButton.logger.info("Media present in cut: #{media.to_a.inspect}")
         cut_conditions = cut.fetch(:conditions, {})
 
@@ -500,7 +502,12 @@ module BigBlueButton
         ffmpeg_inputs = []
         ffmpeg_input_pipes = {}
         ffmpeg_filter = String.new
-        ffmpeg_filter << "color=c=white:s=#{layout[:width]}x#{layout[:height]}:r=#{layout[:framerate]}"
+        background = layout.fetch(:background, 'white')
+        ffmpeg_filter << "color=c=#{background}:s=#{layout[:width]}x#{layout[:height]}:r=#{layout[:framerate]}"
+
+        # Where the media ended up in the frame, for the overlay to draw around it
+        overlay_areas = []
+        overlay_webcams = []
 
         # Check for obscured (completely hidden) video areas, and skip processing for those areas
         layout[:areas].each_with_index do |layout_area, i|
@@ -529,6 +536,11 @@ module BigBlueButton
           video_count = area.length
           BigBlueButton.logger.debug "  Laying out #{video_count} videos in #{layout_area[:name]}"
 
+          area_background = layout_area.fetch(:background, background)
+          # Optional limit on how wide a tile can get, so that few videos in a wide area do not end up far apart
+          max_tile_aspect_ratio = layout_area[:max_tile_aspect_ratio]&.to_r
+          overlay_areas << layout_area.slice(:name, :x, :y, :width, :height)
+
           tiles_h = 0
           tiles_v = 0
           tile_width = 0
@@ -542,6 +554,9 @@ module BigBlueButton
             tmp_tiles_h = (video_count / tmp_tiles_v.to_f).ceil
             tmp_tile_width = (2 * (layout_area[:width].to_f / tmp_tiles_h / 2).floor).to_i
             tmp_tile_height = (2 * (layout_area[:height].to_f / tmp_tiles_v / 2).floor).to_i
+            if max_tile_aspect_ratio
+              tmp_tile_width = [tmp_tile_width, (2 * (tmp_tile_height * max_tile_aspect_ratio / 2).floor).to_i].min
+            end
             next if tmp_tile_width <= 0 or tmp_tile_height <= 0
 
             tmp_total_area = 0
@@ -582,6 +597,16 @@ module BigBlueButton
             xstack_inputs << "[#{pad_name}]"
             xstack_layout << "#{tile_offset_x + (tile_x * tile_width)}_#{tile_offset_y + (tile_y * tile_height)}"
 
+            if layout_area[:name] == :webcam && video[:filename].is_a?(String)
+              overlay_webcams << {
+                user_id: BigBlueButton::Events.get_id_from_filename(video[:filename]),
+                x: layout_area[:x] + tile_offset_x + (tile_x * tile_width),
+                y: layout_area[:y] + tile_offset_y + (tile_y * tile_height),
+                width: tile_width,
+                height: tile_height,
+              }
+            end
+
             tile_x += 1
             if tile_x >= tiles_h
               tile_x = 0
@@ -594,7 +619,8 @@ module BigBlueButton
               video[:timestamp],
               duration,
               layout[:framerate],
-              "#{cut[:timestamp]}_#{pad_name}"
+              "#{cut[:timestamp]}_#{pad_name}",
+              background: area_background
             )
 
             unless video_source_reader.pid.nil?
@@ -624,7 +650,7 @@ module BigBlueButton
           end
           ffmpeg_filter <<
             if xstack_inputs.length >= 2
-              "xstack=fill=white:inputs=#{xstack_inputs.length}:layout=#{xstack_layout.join('|')}"
+              "xstack=fill=#{area_background}:inputs=#{xstack_inputs.length}:layout=#{xstack_layout.join('|')}"
             else
               # xstack doesn't support 1 input; a kind of odd omission
               'null'
@@ -633,6 +659,28 @@ module BigBlueButton
           # Overlay this area on top of the input video
           ffmpeg_filter << "[#{layout_area[:name]}];\n"
           ffmpeg_filter << "[#{layout_area[:name]}_in][#{layout_area[:name]}]overlay=x=#{layout_area[:x]}:y=#{layout_area[:y]}"
+        end
+
+        # The context overlay goes on top of everything, with holes where the media is
+        overlay = cut[:areas][:overlay]&.first
+        if overlay
+          BigBlueButton.logger.debug '  Adding context overlay'
+          overlay_reader = overlay[:source].open(
+            layout[:width],
+            layout[:height],
+            overlay[:timestamp],
+            duration,
+            layout[:framerate],
+            "#{cut[:timestamp]}_overlay",
+            areas: overlay_areas,
+            webcams: overlay_webcams,
+            hidden_webcams: cut.dig(:conditions, :hidden_webcams).to_i
+          )
+          video_source_processes[overlay_reader.pid] = { log: overlay_reader.log_file }
+          ffmpeg_input_pipes[overlay_reader.read] = overlay_reader.read
+          ffmpeg_filter << "[overlay_in];\n"
+          ffmpeg_filter << "[overlay_in][#{ffmpeg_inputs.length}]overlay=x=0:y=0:alpha=premultiplied"
+          ffmpeg_inputs << overlay_reader.ffmpeg_input
         end
 
         # As a safety measure, crop anything that might have made the frame too large.

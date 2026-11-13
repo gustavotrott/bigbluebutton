@@ -624,6 +624,182 @@ module BigBlueButton
       presentation_edl
     end
 
+    # Create a video EDL for the context overlay
+    #
+    # This EDL does not have recording marks pre-applied.
+    #
+    # The overlay is a single generated video which lasts for the whole meeting. It is added in the special :overlay
+    # area, which is not part of the layouts: the renderer composites it over the whole frame.
+    #
+    # @param events [Nokogiri::XML::Document] the events.xml file
+    # @param archive_dir [String] directory containing the raw recording data
+    # @param process_dir [String] directory for output files from processing
+    # @param config [Hash] the 'overlay' section of the video preset
+    # @return [Array<Hash<Symbol, Object>>] the EDL containing the overlay video
+    def self.create_overlay_edl(events, archive_dir, process_dir, config)
+      initial_timestamp = BigBlueButton::Events.first_event_timestamp(events)
+      final_timestamp = BigBlueButton::Events.last_event_timestamp(events)
+
+      video_source = BigBlueButton::EDL::Video::OverlayVideoSource.new(archive_dir, process_dir, config)
+
+      [
+        {
+          timestamp: 0,
+          areas: { overlay: [{ filename: :overlay, source: video_source, timestamp: 0 }] },
+        },
+        {
+          timestamp: final_timestamp - initial_timestamp,
+          areas: { overlay: [] },
+        },
+      ]
+    end
+
+    # Get the intervals in which each user was talking
+    #
+    # @param events [Nokogiri::XML::Document] the events.xml file
+    # @param merge_gap [Integer] pauses up to this long (in milliseconds) do not end an interval
+    # @return [Hash<String, Array<Array<Integer>>>] for each user id, a sorted list of [start, end] in milliseconds
+    #   since the start of the meeting
+    def self.get_talking_intervals(events, merge_gap: 1000)
+      initial_timestamp = BigBlueButton::Events.first_event_timestamp(events)
+      final_timestamp = BigBlueButton::Events.last_event_timestamp(events) - initial_timestamp
+
+      started = {}
+      intervals = Hash.new { |hash, user_id| hash[user_id] = [] }
+      stop = lambda do |user_id, timestamp|
+        start = started.delete(user_id)
+        next if start.nil?
+
+        last = intervals[user_id].last
+        if last && start - last[1] <= merge_gap
+          last[1] = timestamp
+        else
+          intervals[user_id] << [start, timestamp]
+        end
+      end
+
+      events.xpath('/recording/event[@module="VOICE"]').each do |event|
+        user_id = event.at_xpath('participant')&.text
+        next if user_id.nil?
+
+        timestamp = event['timestamp'].to_i - initial_timestamp
+        case event['eventname']
+        when 'ParticipantTalkingEvent'
+          if event.at_xpath('talking')&.text == 'true'
+            started[user_id] ||= timestamp
+          else
+            stop.call(user_id, timestamp)
+          end
+        when 'ParticipantMutedEvent'
+          stop.call(user_id, timestamp) if event.at_xpath('muted')&.text == 'true'
+        when 'ParticipantLeftEvent'
+          stop.call(user_id, timestamp)
+        end
+      end
+      started.keys.each { |user_id| stop.call(user_id, final_timestamp) }
+
+      intervals
+    end
+
+    # Limit how many webcams are shown at the same time in a video EDL
+    #
+    # When more webcams than the limit are being shared, the video shows the ones of who spoke most recently, like
+    # the client does when the webcams are paginated. A webcam which is left out comes in when its user starts
+    # talking, taking the place of the webcam of who has been quiet for the longest time. The other webcams stay
+    # where they are, so the picture does not get shuffled every time a different person talks.
+    #
+    # The number of webcams left out of each cut is stored in the :hidden_webcams condition.
+    #
+    # @param edl [Array<Hash<Symbol, Object>>] the merged video EDL, without recording marks applied
+    # @param events [Nokogiri::XML::Document] the events.xml file
+    # @param max_webcams [Integer] the maximum number of webcams to show
+    # @param min_talk [Integer] how long somebody has to talk (in milliseconds) before their webcam is brought in
+    # @param min_interval [Integer] minimum time (in milliseconds) between two changes of the webcams shown
+    # @return [Array<Hash<Symbol, Object>>] the EDL with the limit applied
+    def self.edl_limit_webcams(edl, events, max_webcams, min_talk: 1500, min_interval: 4000)
+      talking = BigBlueButton::Events.get_talking_intervals(events)
+      # Moments when somebody has talked for long enough: [time, user id, end of the talking interval]
+      activations = talking.flat_map do |user_id, intervals|
+        intervals.filter_map { |start, stop| [start + min_talk, user_id, stop] if stop - start >= min_talk }
+      end.sort
+      # When the user last spoke before the timestamp (the timestamp itself if talking), -1 if never
+      last_spoke = lambda do |filename, timestamp|
+        user_id = BigBlueButton::Events.get_id_from_filename(filename)
+        interval = talking.fetch(user_id, []).reverse_each.find { |start, _stop| start <= timestamp }
+        interval ? [interval[1], timestamp].min : -1
+      end
+
+      shown = []
+      last_change = -min_interval
+      limited_edl = []
+
+      edl.each_with_index do |entry, i|
+        webcams = entry[:areas].fetch(:webcam, [])
+        next_timestamp = edl[i + 1]&.fetch(:timestamp)
+        conditions = entry.fetch(:conditions, {})
+
+        if webcams.length <= max_webcams || next_timestamp.nil?
+          shown = webcams.map { |video| video[:filename] }
+          limited_edl << entry.merge(conditions: conditions.merge(hidden_webcams: 0))
+          next
+        end
+
+        videos = webcams.to_h { |video| [video[:filename], video] }
+        user_of = ->(filename) { BigBlueButton::Events.get_id_from_filename(filename) }
+
+        # Bring in the webcam of the user, in place of the one of who has been quiet for longest
+        bring_in = lambda do |user_id, timestamp|
+          next false if shown.any? { |filename| user_of.call(filename) == user_id }
+
+          hidden = videos.keys.find { |filename| user_of.call(filename) == user_id }
+          next false if hidden.nil?
+
+          quietest = shown.each_index.min_by { |slot| last_spoke.call(shown[slot], timestamp) }
+          shown[quietest] = hidden
+          true
+        end
+        add_entry = lambda do |timestamp|
+          offset = timestamp - entry[:timestamp]
+          areas = entry[:areas].to_h do |area, area_videos|
+            area_videos = shown.map { |filename| videos[filename] } if area == :webcam
+            [area, area_videos.map { |video| video.merge(timestamp: video[:timestamp] + offset) }]
+          end
+          limited_edl << {
+            timestamp: timestamp,
+            areas: areas,
+            conditions: conditions.merge(hidden_webcams: webcams.length - max_webcams),
+          }
+        end
+
+        # Webcams already being shown stay; the free places go to who spoke most recently
+        shown = shown.select { |filename| videos.key?(filename) }.first(max_webcams)
+        candidates = (videos.keys - shown).each_with_index.sort_by do |filename, index|
+          [-last_spoke.call(filename, entry[:timestamp]), index]
+        end
+        shown += candidates.map(&:first).first(max_webcams - shown.length)
+        activations.each do |time, user_id, stop|
+          break if time > entry[:timestamp]
+
+          bring_in.call(user_id, entry[:timestamp]) if stop > entry[:timestamp]
+        end
+        add_entry.call(entry[:timestamp])
+
+        activations.each do |time, user_id, stop|
+          next if time <= entry[:timestamp]
+          break if time >= next_timestamp
+
+          change_at = [time, last_change + min_interval].max
+          next if change_at >= stop || change_at >= next_timestamp
+          next unless bring_in.call(user_id, change_at)
+
+          last_change = change_at
+          add_entry.call(change_at)
+        end
+      end
+
+      limited_edl
+    end
+
     # Create a video EDL for layout events
     #
     # This EDL does not have recording marks pre-applied.

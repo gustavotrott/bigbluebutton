@@ -42,7 +42,8 @@ module BigBlueButton
         # @param duration [Integer] duration of the cut in milliseconds
         # @param framerate [Float] frame rate of the presentation video
         # @param name [String] name which uniquely identifies the individual cut of this video.
-        def open(width, height, seek, duration, framerate, name)
+        # @param background [String] ignored; the presentation is rendered over its own background
+        def open(width, height, seek, duration, framerate, name, background: 'white')
           read, write = IO.pipe
 
           # To reduce overhead, adjust the size of the fifo buffer larger

@@ -281,3 +281,141 @@ presets:
       #    #    '-f', 'webm' ]
       #    postprocess:
       #      - [ 'mkclean', '--quiet', ':input', ':output' ]
+
+  # A 1080p preset with a context overlay drawn around the media: who is speaking right above the
+  # webcams, the name of each webcam, and a column on the right with the meeting name, the recording
+  # date, the elapsed time and a "session activity" timeline with what happened in the meeting.
+  1080p-context:
+    # At most this many webcams are shown at the same time. When more are being shared, the video
+    # keeps the ones of who spoke most recently and the overlay tells how many were left out.
+    # Remove to always show every webcam.
+    max_webcams: 5
+
+    layout:
+      width: 1920
+      height: 1080
+      framerate: 24
+      # Color of the frame behind the media areas (default: white)
+      background: '#0e131f'
+      areas:
+        - { name: presentation, x: 24, y: 258, width: 1376, height: 798 }
+        # 'background' is the color around a video which does not fill its tile.
+        # 'max_tile_aspect_ratio' keeps the tiles from growing wider than the cameras, so a couple
+        # of webcams stay together in the middle of the strip instead of being spread apart.
+        - { name: webcam, x: 24, y: 72, width: 1376, height: 174, background: '#1b2233', max_tile_aspect_ratio: '16/9' }
+        - { name: deskshare, x: 24, y: 258, width: 1376, height: 798, background: '#0a0d14' }
+
+    # The context overlay. Remove this section (or set 'enabled: false') to get a plain video.
+    overlay:
+      enabled: true
+      # Language of the labels: en or pt
+      locale: en
+      # Any text can be replaced, which is also how to use a language the overlay does not have yet. The keys are
+      # the ones of STRINGS in bbb_presentation_video/overlay/renderer.py; plurals are [singular, plural].
+      #strings:
+      #  speaking: Hablando ahora
+      #  activity: Actividad de la sesión
+      #  participants: ['{n} participante', '{n} participantes']
+      #  date: '{day:02d}/{month_number:02d}/{year}'
+      # Timezone used to show the recording date (default: the timezone of the server)
+      #timezone: America/Sao_Paulo
+      font: Noto Sans
+      # Colors of the frame, of the session activity panel and of the cards inside it. With
+      # 'background_end' the frame is a gradient from top to bottom.
+      background: '#0e131f'
+      #background_end: '#0e131f'
+      panel: '#141a27'
+      card: '#1e2638'
+      # A blue variation, closer to the colors of the BigBlueButton client:
+      #background: '#0f70d7'
+      #background_end: '#0a4a94'
+      #panel: '#06172a'
+      #card: '#0f2a4a'
+      # Image shown on the left of the top bar (PNG, JPEG or SVG). Recordings do not store the logo
+      # of the meeting, so this is one file for the whole server.
+      #logo: /var/www/bigbluebutton-default/assets/images/logo.png
+      #logo_height: 40
+      #logo_opacity: 0.9
+      # Show the picture of the user next to their chat messages, when the join request had an
+      # avatarURL. The pictures are downloaded when the video is made. Without one: the initials.
+      avatars: true
+      # Show a small QR code next to the links (chat messages and external videos), so that who is
+      # watching can open them with a phone. Needs the python3-segno package.
+      link_qr_code: true
+      # A user who is back within this many seconds (connection lost, page reloaded) is not shown
+      # as leaving and joining in the session activity
+      rejoin_grace: 120
+      # Space left between the webcam tiles, in pixels
+      tile_gap: 8
+      # Who is speaking: one chip per person (picture or initials, and the name), right above the
+      # webcams. A taller place (height of 100 or more) becomes a panel with one person per line.
+      # Without this, who is speaking goes on the right of the top bar.
+      speakers: { x: 24, y: 14, width: 1376, height: 48 }
+      # Meeting name with the date and elapsed time below it, and the logo in the corner. A bar
+      # wider than 900 has everything on one line instead.
+      top_bar: { x: 1416, y: 16, width: 480, height: 104 }
+      # The session activity timeline
+      activity: { x: 1416, y: 132, width: 480, height: 924 }
+      # What is shown in the session activity timeline
+      events:
+        chat: true            # public chat messages
+        poll: true            # results of a poll, when it is published
+        external_video: true  # an external video was started (shows the URL)
+        join: true            # a user joined the meeting
+        leave: true           # a user left the meeting
+        raise_hand: true      # a user raised their hand
+        reaction: true        # a user sent a reaction (shows the emoji)
+
+    layouts:
+      # If the main content area is minimized, the cameras take its place
+      - areas:
+          - { name: presentation, hidden: true }
+          - { name: webcam, x: 24, y: 72, width: 1376, height: 984, background: '#1b2233' }
+          - { name: deskshare, hidden: true }
+        conditions:
+          presentation_is_open: false
+
+      # Special cases for hiding the deskshare when screenshare_as_content is false.
+      - required: [ webcam, deskshare ]
+        areas:
+          - { name: presentation, hidden: true }
+          - { name: webcam, x: 24, y: 72, width: 1376, height: 984, background: '#1b2233' }
+          - { name: deskshare, hidden: true }
+        conditions:
+          presentation_used: false
+          screenshare_as_content: false
+      - required: [ presentation, webcam, deskshare ]
+        areas:
+          - { name: presentation, x: 24, y: 258, width: 1376, height: 798 }
+          - { name: webcam, x: 24, y: 72, width: 1376, height: 174, background: '#1b2233', max_tile_aspect_ratio: '16/9' }
+          - { name: deskshare, hidden: true }
+        conditions:
+          screenshare_as_content: false
+      - required: [ presentation, deskshare ]
+        areas:
+          - { name: presentation, x: 24, y: 72, width: 1376, height: 984 }
+          - { name: deskshare, hidden: true }
+        conditions:
+          screenshare_as_content: false
+
+      # Cameras take the place of the presentation while it has not been used
+      - required: [ webcam ]
+        areas:
+          - { name: presentation, hidden: true }
+          - { name: webcam, x: 24, y: 72, width: 1376, height: 984, background: '#1b2233' }
+        conditions:
+          presentation_used: false
+
+      # Without webcams, the presentation or the deskshare also use the space of the camera strip
+      - areas:
+          - { name: presentation, x: 24, y: 72, width: 1376, height: 984 }
+          - { name: deskshare, x: 24, y: 72, width: 1376, height: 984, background: '#0a0d14' }
+
+    formats:
+      - mimetype: 'video/mp4'
+        extension: m4v
+        parameters:
+          - [ '-c:v', 'copy',
+              '-c:a', 'aac', '-b:a', '128K',
+              '-f', 'mp4', '-movflags', 'faststart' ]
+        postprocess: []
