@@ -342,6 +342,12 @@ presets:
       # Show a small QR code next to the links (chat messages and external videos), so that who is
       # watching can open them with a phone. Needs the python3-segno package.
       link_qr_code: true
+      # Show the timer or stopwatch of the meeting while it is on the screen, at the right end of
+      # the place of who is speaking
+      timer: true
+      # While a video from a link is played, show its address (and QR code) in the place of the
+      # presentation: the video itself is not part of the recording
+      external_video_notice: true
       # A user who is back within this many seconds (connection lost, page reloaded) is not shown
       # as leaving and joining in the session activity
       rejoin_grace: 120
@@ -358,7 +364,8 @@ presets:
       activity: { x: 1416, y: 132, width: 480, height: 924 }
       # What is shown in the session activity timeline
       events:
-        chat: true            # public chat messages
+        chat: true            # public chat messages, with the quote of the message answered, the
+                              # reactions and the pinned message; deleted messages are never shown
         poll: true            # results of a poll, when it is published
         external_video: true  # an external video was started (shows the URL)
         join: true            # a user joined the meeting
