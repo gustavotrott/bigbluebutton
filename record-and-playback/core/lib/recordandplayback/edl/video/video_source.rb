@@ -81,12 +81,12 @@ module BigBlueButton
         # @param framerate [Float] frame rate of the video
         # @param name [String] name which uniquely identifies the individual cut of this video.
         # @return [VideoSourceReader] reader for the cut
-        def open(width, height, seek, duration, framerate, name)
+        def open(width, height, seek, duration, framerate, name, background: 'white')
           # If the video is corrupt or the seekpoint is at or after the end of the file, the filter chain will have problems.
           # Substitute in a blank video.
           if corrupt? || seek >= @info[:duration]
             return VideoSourceReader.new(
-              ffmpeg_filter: "color=c=white:s=#{width}x#{height}:r=#{framerate}," \
+              ffmpeg_filter: "color=c=#{background}:s=#{width}x#{height}:r=#{framerate}," \
                 "trim=end=#{BigBlueButton::EDL::Video.ms_to_s(duration)}"
             )
           end
@@ -134,7 +134,7 @@ module BigBlueButton
           preprocess_filter = String.new
           preprocess_filter << '[0:v:0]'
           preprocess_filter << "scale=w=#{width}:h=#{height}:force_original_aspect_ratio=decrease,"
-          preprocess_filter << "setsar=1,pad=w=#{width}:h=#{height}:x=-1:y=-1:color=white,"
+          preprocess_filter << "setsar=1,pad=w=#{width}:h=#{height}:x=-1:y=-1:color=#{background},"
           # The trim command combines its arguments - end at the timestamp but only if at least one frame has been output.
           preprocess_filter << "trim=end=#{BigBlueButton::EDL::Video.ms_to_s(out_time)}:end_frame=1"
           preprocess_filter << '[out]'
@@ -171,7 +171,7 @@ module BigBlueButton
           # Apply PTS offset so '0' time is aligned
           ffmpeg_filter << "setpts=PTS-#{BigBlueButton::EDL::Video.ms_to_s(in_time)}/TB[#{name}_input];"
           # Extend the video if needed
-          ffmpeg_filter << "color=c=white:s=#{width}x#{height}:r=#{framerate}[#{name}_tpad];"
+          ffmpeg_filter << "color=c=#{background}:s=#{width}x#{height}:r=#{framerate}[#{name}_tpad];"
           ffmpeg_filter << "[#{name}_input][#{name}_tpad]concat=n=2:v=1:a=0,"
           # Clean up the framerate
           ffmpeg_filter << "fps=#{framerate},"

@@ -185,6 +185,21 @@ BigBlueButton::EDL::Video.dump(layout_edl)
 
 video_edl = BigBlueButton::EDL::Video.merge(webcam_edl, deskshare_edl, presentation_edl, layout_edl)
 
+# With many webcams shared at the same time, the preset can keep only the ones of who spoke most recently
+max_webcams = preset['max_webcams'].to_i
+if max_webcams.positive?
+  logger.info "Limiting the video to #{max_webcams} webcams at a time"
+  video_edl = BigBlueButton::Events.edl_limit_webcams(video_edl, events, max_webcams)
+end
+
+# The context overlay (meeting name, who is speaking, session activity) is optional and configured per preset
+overlay_props = preset['overlay']
+if overlay_props.is_a?(Hash) && overlay_props.fetch('enabled', true)
+  logger.info 'Adding context overlay to video'
+  overlay_edl = BigBlueButton::Events.create_overlay_edl(events, raw_archive_dir, process_dir, overlay_props)
+  video_edl = BigBlueButton::EDL::Video.merge(video_edl, overlay_edl)
+end
+
 logger.debug 'Merged Video EDL:'
 BigBlueButton::EDL::Video.dump(video_edl)
 
