@@ -65,6 +65,8 @@ class RedisRecorderActor(
       case m: GroupChatMessageDeletedEvtMsg         => handleGroupChatMessageDeletedEvtMsg(m)
       case m: GroupChatMessageReactionSentEvtMsg    => handleGroupChatMessageReactionSentEvtMsg(m)
       case m: GroupChatMessageReactionDeletedEvtMsg => handleGroupChatMessageReactionDeletedEvtMsg(m)
+      case m: PinGroupChatMessageEvtMsg             => handlePinGroupChatMessageEvtMsg(m)
+      case m: UnpinGroupChatMessageEvtMsg           => handleUnpinGroupChatMessageEvtMsg(m)
       case m: ClearPublicChatHistoryEvtMsg          => handleClearPublicChatHistoryEvtMsg(m)
 
       // Presentation
@@ -220,6 +222,28 @@ class RedisRecorderActor(
       ev.setSenderId(msg.header.userId)
       ev.setMessageId(msg.body.messageId)
       ev.setReactionEmoji(msg.body.reactionEmoji)
+
+      record(msg.header.meetingId, ev.toMap.asJava)
+    }
+  }
+
+  private def handlePinGroupChatMessageEvtMsg(msg: PinGroupChatMessageEvtMsg) {
+    if (msg.body.chatId == GroupChatApp.MAIN_PUBLIC_CHAT) {
+      val ev = new PinPublicChatMessageRecordEvent()
+      ev.setMeetingId(msg.header.meetingId)
+      ev.setSenderId(msg.header.userId)
+      ev.setMessageId(msg.body.messageId)
+
+      record(msg.header.meetingId, ev.toMap.asJava)
+    }
+  }
+
+  private def handleUnpinGroupChatMessageEvtMsg(msg: UnpinGroupChatMessageEvtMsg) {
+    if (msg.body.chatId == GroupChatApp.MAIN_PUBLIC_CHAT) {
+      val ev = new UnpinPublicChatMessageRecordEvent()
+      ev.setMeetingId(msg.header.meetingId)
+      ev.setSenderId(msg.header.userId)
+      ev.setMessageId(msg.body.messageId)
 
       record(msg.header.meetingId, ev.toMap.asJava)
     }
