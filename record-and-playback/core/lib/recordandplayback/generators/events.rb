@@ -708,11 +708,15 @@ module BigBlueButton
     # talking, taking the place of the webcam of who has been quiet for the longest time. The other webcams stay
     # where they are, so the picture does not get shuffled every time a different person talks.
     #
+    # The limit can depend on the cut (more webcams fit when they have the whole picture for themselves): pass
+    # something that responds to call, which receives the EDL entry and returns its limit. A limit of zero or less
+    # shows every webcam.
+    #
     # The number of webcams left out of each cut is stored in the :hidden_webcams condition.
     #
     # @param edl [Array<Hash<Symbol, Object>>] the merged video EDL, without recording marks applied
     # @param events [Nokogiri::XML::Document] the events.xml file
-    # @param max_webcams [Integer] the maximum number of webcams to show
+    # @param max_webcams [Integer, #call] the maximum number of webcams to show, or how to get it for an EDL entry
     # @param min_talk [Integer] how long somebody has to talk (in milliseconds) before their webcam is brought in
     # @param min_interval [Integer] minimum time (in milliseconds) between two changes of the webcams shown
     # @return [Array<Hash<Symbol, Object>>] the EDL with the limit applied
@@ -737,8 +741,9 @@ module BigBlueButton
         webcams = entry[:areas].fetch(:webcam, [])
         next_timestamp = edl[i + 1]&.fetch(:timestamp)
         conditions = entry.fetch(:conditions, {})
+        limit = max_webcams.respond_to?(:call) ? max_webcams.call(entry).to_i : max_webcams
 
-        if webcams.length <= max_webcams || next_timestamp.nil?
+        if limit <= 0 || webcams.length <= limit || next_timestamp.nil?
           shown = webcams.map { |video| video[:filename] }
           limited_edl << entry.merge(conditions: conditions.merge(hidden_webcams: 0))
           next
@@ -767,16 +772,21 @@ module BigBlueButton
           limited_edl << {
             timestamp: timestamp,
             areas: areas,
-            conditions: conditions.merge(hidden_webcams: webcams.length - max_webcams),
+            conditions: conditions.merge(hidden_webcams: webcams.length - limit),
           }
         end
 
         # Webcams already being shown stay; the free places go to who spoke most recently
-        shown = shown.select { |filename| videos.key?(filename) }.first(max_webcams)
+        shown = shown.select { |filename| videos.key?(filename) }
+        if shown.length > limit
+          # Less room than before: who spoke most recently stays
+          keep = shown.max_by(limit) { |filename| last_spoke.call(filename, entry[:timestamp]) }
+          shown &= keep
+        end
         candidates = (videos.keys - shown).each_with_index.sort_by do |filename, index|
           [-last_spoke.call(filename, entry[:timestamp]), index]
         end
-        shown += candidates.map(&:first).first(max_webcams - shown.length)
+        shown += candidates.map(&:first).first(limit - shown.length)
         activations.each do |time, user_id, stop|
           break if time > entry[:timestamp]
 
