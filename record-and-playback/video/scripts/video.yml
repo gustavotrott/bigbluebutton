@@ -356,8 +356,9 @@ presets:
       # as leaving and joining in the session activity
       rejoin_grace: 120
       # Lines of names in the entry of who was in the meeting when the recording started; the
-      # names that do not fit are counted ("and 20 more")
-      present_lines: 8
+      # names that do not fit are counted ("and 20 more"). With 0 it takes as many lines as fit
+      # in the session activity, less two so it does not look cut by the lack of space
+      present_lines: 0
       # Space left between the webcam tiles, in pixels
       tile_gap: 8
       # Who is speaking: one chip per person (picture or initials, and the name), right above the
@@ -377,6 +378,7 @@ presets:
         external_video: true  # an external video was started (shows the URL)
         present: true         # who was already in the meeting when the recording started, in a single
                               # entry (what happens before the recording starts is not shown)
+        pause: true           # the recording was paused and resumed (shows the time of both)
         join: true            # a user joined the meeting
         leave: true           # a user left the meeting
         raise_hand: true      # a user raised their hand
