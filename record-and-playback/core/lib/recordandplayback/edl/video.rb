@@ -658,7 +658,14 @@ module BigBlueButton
 
           # Overlay this area on top of the input video
           ffmpeg_filter << "[#{layout_area[:name]}];\n"
-          ffmpeg_filter << "[#{layout_area[:name]}_in][#{layout_area[:name]}]overlay=x=#{layout_area[:x]}:y=#{layout_area[:y]}"
+          # A single video does not go through xstack, which is what places the tiles inside the area
+          area_x = layout_area[:x]
+          area_y = layout_area[:y]
+          if xstack_inputs.length == 1
+            area_x += tile_offset_x
+            area_y += tile_offset_y
+          end
+          ffmpeg_filter << "[#{layout_area[:name]}_in][#{layout_area[:name]}]overlay=x=#{area_x}:y=#{area_y}"
         end
 
         # The context overlay goes on top of everything, with holes where the media is
