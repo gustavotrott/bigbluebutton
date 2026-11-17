@@ -39,6 +39,7 @@ import { useMouseEvents, useCursor } from './hooks';
 import {
   notifyShapeNumberExceeded, getCustomEditorAssetUrls, getCustomAssetUrls,
   debouncedUpdateShapes, sanitizeShape, setupColorThemePaletteOverrides,
+  isolateTextMeasure,
 } from './service';
 import NoopTool from './custom-tools/noop-tool/component';
 import DeleteSelectedItemsTool from './custom-tools/delete-selected-items/component';
@@ -1329,6 +1330,8 @@ const Whiteboard = React.memo((props) => {
     } else {
       logger.warn({ logCode: 'SetMaxStackSize' }, 'Failed to set max history stack size - feature not available');
     }
+
+    isolateTextMeasure(editor);
 
     tlEditorRef.current = editor;
     setTldrawAPI(editor);

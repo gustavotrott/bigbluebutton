@@ -385,6 +385,54 @@ const sanitizeShape = (shape) => {
   };
 };
 
+// tldraw measures text (text shapes, labels) by writing it into a `.tl-text-measure`
+// element that it removes and re-creates inside the editor container on every
+// measurement, then reading getBoundingClientRect(). Inside the container, that
+// DOM change makes the browser recalculate the style of every rendered shape (the
+// page's `:has()` rules make the change look relevant to all of them), so each
+// measurement costs ~100 ms with ~4k shapes on the page. Creating 200 text shapes
+// took ~20 s, and loading a page with 700 text shapes froze the client for seconds.
+// Measuring in a stable element outside the container, isolated with `contain:
+// strict`, returns the same sizes (same classes, so same fonts and CSS variables)
+// in ~0.1 ms.
+const isolateTextMeasure = (editor) => {
+  const textManager = editor?.textMeasure;
+  const container = editor?.getContainer?.();
+  if (!textManager || !container || typeof textManager.getTextElement !== 'function') return;
+  if (textManager.bbbIsolated) return;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = container.className;
+  wrapper.setAttribute('aria-hidden', 'true');
+  Object.assign(wrapper.style, {
+    position: 'fixed',
+    left: '-100000px',
+    top: '0',
+    width: '0',
+    height: '0',
+    overflow: 'hidden',
+    contain: 'strict',
+    pointerEvents: 'none',
+  });
+  document.body.appendChild(wrapper);
+
+  const element = document.createElement('div');
+  element.classList.add('tl-text', 'tl-text-measure');
+  element.tabIndex = -1;
+  wrapper.appendChild(element);
+
+  // Removes the element tldraw created inside the container on mount.
+  container.querySelectorAll('.tl-text-measure').forEach((el) => el.remove());
+
+  textManager.getTextElement = () => element;
+  textManager.bbbIsolated = true;
+
+  const cleanup = () => wrapper.remove();
+  if (editor.disposables instanceof Set) {
+    editor.disposables.add(cleanup);
+  }
+};
+
 const debouncedUpdateShapes = debounce((
   shapes, tlEditorRef, presentationIdRef, pageChanged, assets, bgShape, currentUserId,
 ) => {
@@ -477,6 +525,7 @@ export {
   getCustomEditorAssetUrls,
   getCustomAssetUrls,
   debouncedUpdateShapes,
+  isolateTextMeasure,
   sanitizeShape,
   setupColorThemePaletteOverrides,
 };
