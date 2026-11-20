@@ -266,6 +266,9 @@ public:
         # Off by default: the label stays put, so the button never resizes under
         # the pointer and never shifts the nav bar around it.
         recordingIndicatorAutoCollapse: false
+        # Hide the user's own webcam tiles; everyone else still receives the stream.
+        # Each user can change it in Settings > Application ("Disable self-view (all cameras)").
+        selfViewDisable: false
         pushToTalkEnabled: true
         autoCloseReactionsBar: true
         directLeaveButton: true
@@ -317,43 +320,33 @@ public:
     # The modifier shown follows the user's browser/OS (Alt, Alt + Shift, Control + Option).
     # Not shown on mobile devices. Can be overridden per user with userdata-bbb_show_shortcuts_in_tooltips
     showShortcutsInTooltips: true
+    # Access key of each client shortcut (Alt + key; Shift + Alt + key on Firefox).
+    # The entry names are fixed: they are what userdata-bbb_shortcuts lists.
     shortcuts:
       openOptions:
         accesskey: O
-        descId: openOptions
       toggleUserList:
         accesskey: U
-        descId: toggleUserList
       openLeaveMenu:
         accesskey: X
-        descId: openLeaveMenu
       toggleMute:
         accesskey: M
-        descId: toggleMute
       joinAudio:
         accesskey: J
-        descId: joinAudio
       leaveAudio:
         accesskey: L
-        descId: leaveAudio
       togglePublicChat:
         accesskey: P
-        descId: togglePublicChat
       hidePrivateChat:
         accesskey: H
-        descId: hidePrivateChat
       closePrivateChat:
         accesskey: G
-        descId: closePrivateChat
       raiseHand:
         accesskey: R
-        descId: raiseHand
       openActions:
         accesskey: A
-        descId: openActions
       openDebugWindow:
         accesskey: K
-        descId: openDebugWindow
     branding:
       displayBrandingArea: true
     connectionTimeout: 60000
@@ -603,9 +596,9 @@ public:
       # paginationToggleEnabled: show a pagination toggle in settings for the
       # user to enable/disable it
       paginationToggleEnabled: true
-      # paginationToggleModeratorOnly: show the pagination toggle to moderators
-      # only. Users who can't see the toggle always get the default value in
-      # public.app.defaultSettings.application.paginationEnabled
+      # paginationToggleModeratorOnly: only moderators can change the pagination
+      # toggle. Viewers still see it, disabled, and always get the default value
+      # in public.app.defaultSettings.application.paginationEnabled
       paginationToggleModeratorOnly: false
       # how long (in ms) the negotiation will be debounced after a page change.
       pageChangeDebounceTime: 1000
@@ -677,6 +670,11 @@ public:
       quickPollCorrectAnswerSuffix: "__"
   captions:
     background: '#000000'
+    # maximum number of characters accepted in a single caption submission.
+    # Enforced by akka-apps, which is authoritative. bbb-graphql-actions applies
+    # a separate transport ceiling first (CAPTION_TEXT_CEILING in its config.ts,
+    # default 65536), so raising this above that ceiling has no effect.
+    maxTextLength: 8192
     font:
       color: '#ffffff'
       family: Calibri
@@ -1172,6 +1170,8 @@ public:
             maxFramerate: 15
             priority: medium
   stats:
+    # Shows the connection status button, its modal and the connection notifications.
+    # The connection-alive heartbeat behind user_connectionStatus is sent regardless of this value.
     enabled: true
     interval: 10000
     timeout: 10000
@@ -1211,7 +1211,6 @@ public:
     allowDownloadOriginal: true
     allowDownloadWithAnnotations: true
     allowSnapshotOfCurrentSlide: true
-    panZoomThrottle: 32
     restoreOnUpdate: true
     uploadEndpoint: '/bigbluebutton/presentation/upload'
     fileUploadConstraintsHint: false

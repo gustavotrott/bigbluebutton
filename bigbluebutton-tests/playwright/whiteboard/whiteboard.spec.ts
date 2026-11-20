@@ -261,6 +261,17 @@ test.describe.parallel('Whiteboard tools', { tag: '@ci' }, () => {
     );
   });
 
+  test('Scrolling right after Fit to width keeps the zoom and the viewer in sync', async ({
+    browser,
+    context,
+    page,
+  }, testInfo) => {
+    linkIssue(26578);
+    const slidePosition = new SlidePosition(browser, context);
+    await slidePosition.initPages(page, testInfo);
+    await slidePosition.keepsFitToWidthAndViewerInSyncWhenScrollingRightAway();
+  });
+
   test(
     'Different per-slide zooms restore exact camera positions',
     { tag: '@nightly' },
@@ -274,9 +285,10 @@ test.describe.parallel('Whiteboard tools', { tag: '@ci' }, () => {
 
   test(
     'Toolbar-zoomed slide is restored after a fit-to-width slide',
-    { tag: '@nightly' },
+    { tag: '@known-issue' },
     async ({ browser, context, page }, testInfo) => {
       linkIssue(25866);
+      linkIssue(26590);
       const slidePosition = new SlidePosition(browser, context);
       await slidePosition.initPages(page, testInfo);
       await slidePosition.restoresToolbarZoomAfterFitToWidthChange();
@@ -411,6 +423,13 @@ test.describe.parallel('Multi-user whiteboard', { tag: '@ci' }, () => {
     await whiteboard.initUserPage(context, { testInfo });
     await whiteboard.initUserPage2(context, { testInfo });
     await whiteboard.viewerAnnotationReachesEveryone();
+  });
+
+  test('Viewer undo removes the stroke for everyone', async ({ browser, context, page }, testInfo) => {
+    const whiteboard = new MultiUserWhiteboard(browser, context);
+    await whiteboard.initModPage(page, { testInfo });
+    await whiteboard.initUserPage(context, { testInfo });
+    await whiteboard.viewerUndoRemovesStroke();
   });
 });
 

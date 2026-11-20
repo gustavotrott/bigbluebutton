@@ -1167,6 +1167,8 @@ const Whiteboard = React.memo((props) => {
         && scaledHeight > 0
         && tlEditorRef.current
       ) {
+        // A wheel pan still animating would overwrite the camera written below.
+        tlEditorRef.current.stopCameraAnimation();
         let baseZoom = calculateZoomValueRef.current(scaledWidth, scaledHeight);
         throwIfInvalid(baseZoom, 'baseZoom');
 
@@ -1401,6 +1403,12 @@ const Whiteboard = React.memo((props) => {
     if (sizeStyles.includes(initialSizeStyle)) {
       editor.setStyleForNextShapes(DefaultSizeStyle, initialSizeStyle);
     }
+
+    editor.sideEffects.registerBeforeCreateHandler('shape', (shape, source) => {
+      const userId = currentUserRef.current?.userId;
+      if (source !== 'user' || !userId || shape.meta?.createdBy) return shape;
+      return { ...shape, meta: { ...shape.meta, createdBy: userId } };
+    });
 
     editor.sideEffects.registerBeforeDeleteHandler('shape', (shape, source) => {
       const { presenter, isModerator, userId } = currentUserRef.current;
