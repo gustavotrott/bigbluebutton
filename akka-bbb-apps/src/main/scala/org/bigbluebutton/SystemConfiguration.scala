@@ -84,6 +84,9 @@ trait SystemConfiguration {
   // Optional list of colors assigned to users (avatar). Empty means use the built-in defaults.
   lazy val userColors: List[String] = Try(config.getStringList("users.colors").asScala.toList).getOrElse(List())
 
+  // Optional list of colors assigned to users (avatar). Empty means use the built-in defaults.
+  lazy val userColors: List[String] = Try(config.getStringList("users.colors").asScala.toList).getOrElse(List())
+
   // Redis server configuration
   lazy val redisHost = Try(config.getString("redis.host")).getOrElse("127.0.0.1")
   lazy val redisPort = Try(config.getInt("redis.port")).getOrElse(6379)
